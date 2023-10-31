@@ -7,10 +7,39 @@
     <h1>Welcome to the Book Recommender!</h1>
     <!-- Your GUI elements go here -->
 
-    <form action="/query" method="post">
-    <label for="user_input">Enter information:</label>
-    <input type="text" id="user_input" name="user_input">
-    <input type="submit" value="Submit">
-    </form>
+    <!-- Book Lookup Submission -->
+    <div style="float:left;">
+        <form action="/query" method="post">
+
+        <label for="genre_input">Enter genre:</label>
+        <input type="text" id="genre_input" name="genre_input">
+            <br> <br>
+        <label for="author_input">Enter author:</label>
+        <input type="text" id="author_input" name="author_input">
+
+        <input type="submit" value="Submit">
+        </form>
+    </div>
+
+    <!-- Book Entry -->
+    <div style="float:right;">
+        <form id="add_book" action="/" method="post">
+        <label for="newbook_input">Enter book name:</label>
+        <input type="text" id="newbook_input" name="newbook_input">
+            <br> <br>
+        <label for="newauthor_input">Enter book's author:</label>
+        <input type="text" id="newauthor_input" name="newauthor_input">
+            <br> <br>
+        <label for="newgenre_input">Enter book's genre:</label>
+        <input type="text" id="newgenre_input" name="newgenre_input">
+            <br> <br>
+        <label for="newlen_input">Enter book's length in pages:</label>
+        <input type="text" id="newlen_input" name="newlen_input">
+
+
+        <input type="submit" value="Submit">
+        </form>
+    </div>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
