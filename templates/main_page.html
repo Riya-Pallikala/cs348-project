@@ -9,6 +9,7 @@
 
     <!-- Book Lookup Submission -->
     <div style="float:left;">
+        <h2>Get a Recommendation!</h2>
         <form action="/query" method="post">
 
         <label for="genre_input">Enter genre:</label>
@@ -23,6 +24,7 @@
 
     <!-- Book Entry -->
     <div style="float:right;">
+        <h2>Add a Book!</h2>
         <form id="add_book" action="/" method="post">
         <label for="newbook_input">Enter book name:</label>
         <input type="text" id="newbook_input" name="newbook_input">
@@ -32,14 +34,23 @@
             <br> <br>
         <label for="newgenre_input">Enter book's genre:</label>
         <input type="text" id="newgenre_input" name="newgenre_input">
-            <br> <br>
-        <label for="newlen_input">Enter book's length in pages:</label>
-        <input type="text" id="newlen_input" name="newlen_input">
 
 
         <input type="submit" value="Submit">
         </form>
+        <div id="success-message" style="display: {{ 'block' if success else 'none' }}">Successfully submitted!</div>
     </div>
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script>
+        // JavaScript to display the success message if success is true
+        document.addEventListener("DOMContentLoaded", function() {
+            const success = {{ success|lower }}; // Convert Python boolean to JavaScript boolean
+            const successMessage = document.getElementById("success-message");
+            if (success) {
+                successMessage.style.display = "block";
+            }
+        });
+    </script>
+
+
 </body>
 </html>
