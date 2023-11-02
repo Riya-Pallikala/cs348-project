@@ -46,19 +46,20 @@
         <input type="submit" value="Submit">
         </form>
         <div id="success-message" style="display: {{ 'block' if success else 'none' }}">Successfully submitted!</div>
-        <div id="failure-message" style="display: {{ 'block' if success else 'none' }}">Book already in database!</div>
+        <div id="failure-message" style="display: {{ 'block' if alreadyRegistered else 'none' }}">Book already in database!</div>
     </div>
     <script>
         // JavaScript to display the success message if success is true
         document.addEventListener("DOMContentLoaded", function() {
             const success = {{ success }}; // Convert Python boolean to JavaScript boolean
             const alreadyRegistered = {{ alreadyRegistered }};
+
             const successMessage = document.getElementById("success-message");
-            const successMessage1 = document.getElementById("failure-message");
+            const failureMessage = document.getElementById("failure-message");
             if (success) {
                 successMessage.style.display = "block";
             } else if (alreadyRegistered) {
-                successMessage1.style.display = "block";
+                failureMessage.style.display = "block";
             }
         });
     </script>

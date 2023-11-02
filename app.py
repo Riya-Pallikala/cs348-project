@@ -65,8 +65,8 @@ def reset_database():
     conn.commit()
 
     # Create stored procedures
-    with open('stored_procedures.sql', 'r') as sql_file:
-        cursor.executescript(sql_file.read())
+    # with open('stored_procedures.sql', 'r') as sql_file:
+    #    cursor.executescript(sql_file.read())
     conn.commit()
     conn.close()
 
@@ -91,18 +91,27 @@ def update_database():
 
 
     # Calculate author's id
-    ## SANITIZE INPUT TO AVOID SQL INJECTION ATTACKS
 
     aId = 0
-    cursor.execute('CALL getAuthorIdFromName(?, ?, ?)', (bookauthorfirst, bookauthorsecond, aId))
+
+    # Stored Procedure
+    # cursor.execute('CALL getAuthorIdFromName(?, ?)', (bookauthorfirst, bookauthorsecond))
+
+    # SQLite version ---
+    cursor.execute('SELECT authorId FROM Authors a WHERE LOWER(a.firstname) = LOWER(?) AND LOWER(a.lastname) = LOWER(?)',
+                   (bookauthorfirst.capitalize(), bookauthorsecond.capitalize()))
+    result = cursor.fetchone()
+    aId = result[0]
+
+    # end of procedure ---
 
     if (aId is not None):
         # Author already exists, check that they don't already have a book of this name
 
         # Check for existing book in Books table
-        cursor.execute('SELECT * FROM Books b WHERE b.authorId == ? AND b.name == ?', (aId, bookname))
-        res = cursor.fetchone()
-        if (res[0] is not None):
+        cursor.execute('SELECT * FROM Books b WHERE b.authorId == ? AND LOWER(b.name) == LOWER(?)', (aId, bookname))
+        result = cursor.fetchone()
+        if (result is not None and result[0] is not None):
             # book already exists. Cannot register, so return failure message
             alreadyRegistered = True
             return render_template('main_page.html', alreadyRegistered=alreadyRegistered)
@@ -112,21 +121,48 @@ def update_database():
         # New author, need to add to the Authors table
 
         # Calculate a new author ID
-        cursor.execute('CALL getNewAuthorId(?)', aId)
+
+        # Stored Procedure
+        # cursor.execute('CALL getNewAuthorId()')
+
+        # SQLite version ---
+        cursor.execute('SELECT max(authorId) from Authors;')
+        result = cursor.fetchone()
+        if (result[0] is None):
+            aId = 1
+        else:
+            aId = result[0] + 1
+        # end of procedure ---
 
         # Add new author to Authors table
         cursor.execute('INSERT INTO Authors (authorId, firstname, lastname) VALUES (?, ?, ?);',
-                       (aId, bookauthorfirst, bookauthorsecond))
+                       (aId, bookauthorfirst.capitalize(), bookauthorsecond.capitalize()))
 
 
     # Author has been added to database if not previously existing. Book can now be registered
 
     # Calculate a new book ID
     max_id = 0
-    cursor.execute('CALL getNewBookId(?)', max_id)
 
-    # id, name, genre, author, length
-    cursor.execute('INSERT INTO Books (bookId, name, authorId, genre)  VALUES (?, ?, ?, ?);', (max_id, bookname, aId, bookgenre))
+    # Stored Procedure
+    # cursor.execute('CALL getNewBookId()')
+
+    # SQLite version ---
+    cursor.execute('SELECT max(bookId) from Books;')
+    result = cursor.fetchone()
+
+    if (result[0] is None):
+        # empty booklist, this will be the first
+        max_id = 1
+    else:
+        # increment largest ID by 1, will be unique ID
+        max_id = result[0] + 1
+    # SQLite version ---
+
+
+    # Insert -- attribute order is : id, name, genre, author, length
+    cursor.execute('INSERT INTO Books (bookId, name, authorId, genre)  VALUES (?, ?, ?, ?);',
+                   (max_id, bookname, aId, bookgenre.capitalize()))
     conn.commit()
     conn.close()
 
@@ -149,17 +185,22 @@ def query_database():
     firstFilter = True
     if (genre_input != ''):
         firstFilter = False
-        query_str += ' WHERE b.genre == "' + genre_input + '"'
+        query_str += ' WHERE LOWER(b.genre) == "' + genre_input.lower() + '"'
 
     if (author_input != ''):
         author_names = author_input.split(' ');
         aId = 0;
-        cursor.execute('CALL getAuthorIdFromName(?, ?, ?)', (author_names[0], author_names[len(author_names) - 1], aId))
+        cursor.execute('SELECT authorId FROM Authors a WHERE LOWER(a.firstname) = LOWER(?) '
+                       'AND LOWER(a.lastname) = LOWER(?)',
+                       (author_names[0].capitalize(), author_names[len(author_names) - 1].capitalize()))
+        results = cursor.fetchone()
+        aId = results[0]
+
         if firstFilter:
             query_str += ' WHERE'
         else:
             query_str += ' AND'
-        query_str += ' b.authorId == ' + aId
+        query_str += ' b.authorId == ' + str(aId)
 
     if (rating_input != ''):
         # stored procedure to calculate rating for each book
