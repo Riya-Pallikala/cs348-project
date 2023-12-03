@@ -38,8 +38,11 @@ def get_authorid_from_name(bookauthorfirst, bookauthorsecond):
     cursor = conn.cursor()
 
     aId = 0
-    cursor.execute(
+    """ cursor.execute(
         'SELECT authorId FROM Authors a WHERE LOWER(a.firstname) = LOWER(?) AND LOWER(a.lastname) = LOWER(?)',
+        (bookauthorfirst.capitalize(), bookauthorsecond.capitalize())) """
+    cursor.execute(
+        'SELECT authorId FROM Authors a WHERE a.firstname = ? AND a.lastname = ?',
         (bookauthorfirst.capitalize(), bookauthorsecond.capitalize()))
     result = cursor.fetchone()
 
@@ -93,11 +96,12 @@ def get_full_author_name(author_id):
 
 # Books Table
 class BookClass:
-    def __init__(self, bookId, name, authorId, genre):
+    def __init__(self, bookId, name, authorId, genre, rating=None):
         self.bookId = bookId
         self.name = name
         self.authorId = authorId
         self.genre = genre
+        self.rating = rating
 
     # ORM select matching ID
     def get_book_with_id(bookid):
@@ -259,12 +263,26 @@ def reset_database():
     newBook1 = BookClass(10, "Braiding Sweetgrass", 10, "Contemporary")
     newBook1.save_to_db()
 
+    create_indexes()
 
     conn.commit()
     cursor.close()
     conn.close()
 
     return
+
+def create_indexes():
+    conn = sqlite3.connect('databases/test_db1.db')
+    cursor = conn.cursor()
+
+    # create index on author names
+    cursor.execute('CREATE INDEX authorsNames ON Authors (firstname, lastname)');
+
+    # create index on book ratings
+
+    conn.commit()
+    cursor.close()
+    conn.close()
 
 @app.route('/', methods=['POST', 'GET'])
 def update_database():
@@ -311,7 +329,7 @@ def update_database():
     max_id = get_new_book_id()
 
     # Insert -- attribute order is : id, name, genre, author, length
-    newbook = BookClass(max_id, bookname, aId, bookgenre.capitalize())
+    newbook = BookClass(max_id, bookname.capitalize(), aId, bookgenre.capitalize())
     newbook.save_to_db()
 
     #cursor.execute('INSERT INTO Books (bookId, name, authorId, genre)  VALUES (?, ?, ?, ?);', (max_id, bookname, aId, bookgenre.capitalize()))
@@ -344,8 +362,8 @@ def query_database():
         # add functionality for list of authors
         author_names = author_input.split(' ');
         aId = 0;
-        cursor.execute('SELECT authorId FROM Authors a WHERE LOWER(a.firstname) = LOWER(?) '
-                       'AND LOWER(a.lastname) = LOWER(?)',
+        cursor.execute('SELECT authorId FROM Authors a WHERE a.firstname = ? '
+                       'AND a.lastname = ?',
                        (author_names[0].capitalize(), author_names[len(author_names) - 1].capitalize()))
         results = cursor.fetchone()
         aId = results[0]
