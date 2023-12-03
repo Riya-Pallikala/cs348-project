@@ -3,393 +3,28 @@ import datetime
 from flask import Flask, render_template, request, redirect, url_for
 import sqlite3
 
+from ORM_Classes import AuthorClass, BookClass, UserClass, RatingClass
+
+from helper_author import *
+from helper_book import *
+from helper_rating import *
+from helper_database import *
+
 app = Flask(__name__)
 
+# Handle only html page rendering and processing in this file
+# ORM class logic abstracted to ORM_Classes.py
+# Helper functions that are not Class defs abstracted to respectively named helper files
+# Helper functions for general database setup abstracted to helper_database.py
+
+# Home Page
 @app.route('/')
 def home():
     success = False
     return render_template('main_page.html', success=success)
 
-# Authors Table
-class AuthorClass:
-    def __init__(self, authorId, firstname, lastname):
-        self.authorId = authorId
-        self.firstname = firstname
-        self.lastname = lastname
 
-    # ORM get id given name
-    #def get_id_from_name(self, fname, last):
-
-    # ORM insert
-    def save_to_db(self):
-        conn = sqlite3.connect('databases/test_db1.db')
-        cursor = conn.cursor()
-
-        # Insert row with passed values
-        cursor.execute('INSERT INTO Authors (authorId, firstname, lastname) VALUES (?, ?, ?)',
-                       (self.authorId, self.firstname, self.lastname))
-
-        conn.commit()
-        cursor.close()
-        conn.close()
-
-def get_authorid_from_name(bookauthorfirst, bookauthorsecond):
-    conn = sqlite3.connect('databases/test_db1.db')
-    cursor = conn.cursor()
-
-    aId = 0
-    """ cursor.execute(
-        'SELECT authorId FROM Authors a WHERE LOWER(a.firstname) = LOWER(?) AND LOWER(a.lastname) = LOWER(?)',
-        (bookauthorfirst.capitalize(), bookauthorsecond.capitalize())) """
-    cursor.execute(
-        'SELECT authorId FROM Authors a WHERE a.firstname = ? AND a.lastname = ?',
-        (bookauthorfirst.capitalize(), bookauthorsecond.capitalize()))
-    result = cursor.fetchone()
-
-    if (result is not None):
-        aId = result[0]
-    else:
-        aId = None
-
-    conn.commit()
-    cursor.close()
-    conn.close()
-
-    return aId
-
-def add_new_author(bookauthorfirst, bookauthorsecond):
-    conn = sqlite3.connect('databases/test_db1.db')
-    cursor = conn.cursor()
-
-    cursor.execute('SELECT max(authorId) from Authors;')
-    result = cursor.fetchone()
-    if (result[0] is None):
-        aId = 1
-    else:
-        aId = result[0] + 1
-
-    # Add new author to Authors table
-    newauthor = AuthorClass(aId, bookauthorfirst.capitalize(), bookauthorsecond.capitalize())
-    newauthor.save_to_db()
-
-    conn.commit()
-    cursor.close()
-    conn.close()
-
-    return aId
-def get_full_author_name(author_id):
-    conn = sqlite3.connect('databases/test_db1.db')
-    cursor = conn.cursor()
-
-    # Assuming 'authors' is the name of your authors table
-    cursor.execute('SELECT firstname, lastname FROM Authors WHERE authorId = ?', (author_id,))
-    result = cursor.fetchone()
-
-    conn.close()
-
-    # Check if data is found
-    if result:
-        fullname = f"{result[0]} {result[1]}"
-        return fullname
-    else:
-        return "Unknown Author"
-
-# Books Table
-class BookClass:
-    def __init__(self, bookId, name, authorId, genre, ave_rating=None):
-        self.bookId = bookId
-        self.name = name
-        self.authorId = authorId
-        self.genre = genre
-        self.ave_rating = ave_rating
-
-    # ORM select matching ID
-    def get_book_with_id(bookid):
-        conn = sqlite3.connect('databases/test_db1.db')
-        cursor = conn.cursor()
-
-        # Find book
-        cursor.execute('SELECT * FROM Books WHERE bookId = ?;', (bookid,))
-
-        result = cursor.fetchone()
-
-        conn.commit()
-        cursor.close()
-        conn.close()
-
-        if result:
-            # Create an instance of BookClass
-            obj = BookClass(*result)
-            return obj
-        else:
-            return None
-
-    # ORM update book's info - CANNOT update rating this way
-    def update_book_data(self, name, authorfirstname, authorlastname, genre):
-
-        self.name = name
-        self.genre = genre
-
-        conn = sqlite3.connect('databases/test_db1.db')
-        cursor = conn.cursor()
-
-        cursor.execute('UPDATE Books SET name = ?, genre = ? WHERE bookId  = ?', (self.name, self.genre, self.bookId))
-
-        conn.commit()
-        cursor.close()
-        conn.close()
-
-
-
-    # ORM insert
-    def save_to_db(self):
-        conn = sqlite3.connect('databases/test_db1.db')
-        cursor = conn.cursor()
-
-        # Insert passed data
-        cursor.execute('INSERT INTO Books (bookId, name, authorId, genre, ave_rating)  VALUES (?, ?, ?, ?, ?);',
-                       (self.bookId, self.name, self.authorId, self.genre, self.ave_rating))
-
-        conn.commit()
-        cursor.close()
-        conn.close()
-
-def get_new_book_id():
-    conn = sqlite3.connect('databases/test_db1.db')
-    cursor = conn.cursor()
-
-    max_id = 0
-    cursor.execute('SELECT max(bookId) from Books;')
-    result = cursor.fetchone()
-
-    if (result is None or result[0] is None):
-        # empty booklist, this will be the first
-        max_id = 1
-    else:
-        # increment largest ID by 1, will be unique ID
-        max_id = result[0] + 1
-
-    conn.commit()
-    cursor.close()
-    conn.close()
-    return max_id
-
-# Users Table
-class UserClass:
-    def __init__(self, userId, username, password):
-        self.userId = userId
-        self.username = username
-        self.password = password
-
-    def save_to_db(self):
-        conn = sqlite3.connect('databases/test_db1.db')
-        cursor = conn.cursor()
-
-        # Insert passed data
-        cursor.execute('INSERT INTO Users (userId, username, password)  VALUES (?, ?, ?);',
-                       (self.userId, self.username, self.password))
-
-        conn.commit()
-        cursor.close()
-        conn.close()
-
-
-# Ratings Table
-class RatingClass:
-    def __init__(self, ratingId, userId, bookId, rating):
-        self.ratingId = ratingId
-        self.userId = userId
-        self.bookId = bookId
-        self.rating = rating
-
-    def save_to_db(self):
-        conn = sqlite3.connect('databases/test_db1.db')
-        cursor = conn.cursor()
-
-        # Insert passed data
-        cursor.execute('INSERT INTO Ratings (ratingId, userId, bookId, rating)  VALUES (?, ?, ?, ?);',
-                       (self.ratingId, self.userId, self.bookId, self.rating))
-
-        conn.commit()
-        cursor.close()
-        conn.close()
-
-        print("saved new rating for book, recalc now")
-        self.recalculate_ratings()
-
-    def recalculate_ratings(self):
-        # recalculates the ave rating for the book whose rating is being edited, deleted, or added
-        conn = sqlite3.connect('databases/test_db1.db')
-        cursor = conn.cursor()
-
-        # get all ratings for that book
-        cursor.execute('SELECT rating FROM Ratings bookId WHERE bookId = ?;', (self.bookId,))
-        results = cursor.fetchall()
-
-        new_ave = 0;
-        if (results is not None):
-
-            for res in results:
-                new_ave += res[0]
-            new_ave /= len(results)
-        else:
-            # book is now unrated
-            new_ave = None
-
-        # update book with new average rating
-        cursor.execute('UPDATE Books SET ave_rating = ? WHERE bookId  = ?', (new_ave, self.bookId))
-
-        conn.commit()
-        cursor.close()
-        conn.close()
-
-def get_new_rating_id():
-    conn = sqlite3.connect('databases/test_db1.db')
-    cursor = conn.cursor()
-
-    max_id = 0
-    cursor.execute('SELECT max(ratingId) from Ratings;')
-    result = cursor.fetchone()
-
-    if (result is None or result[0] is None):
-        # empty ratingList, this will be the first
-        max_id = 1
-    else:
-        # increment largest ID by 1, will be unique ID
-        max_id = result[0] + 1
-
-    conn.commit()
-    cursor.close()
-    conn.close()
-    return max_id
-
-# Reset Database to default starting data
-# @app.route('/', methods=['POST', 'GET'])
-def reset_database():
-    # Change to stored procedure?
-    conn = sqlite3.connect('databases/test_db1.db')
-    cursor = conn.cursor()
-
-    # drop tables to reset
-    cursor.execute('DROP TABLE IF EXISTS Books;')
-    cursor.execute('DROP TABLE IF EXISTS Authors;')
-    cursor.execute('DROP TABLE IF EXISTS Users;')
-    cursor.execute('DROP TABLE IF EXISTS Ratings;')
-
-    # Create tables Authors(authorId, firstname, lastname)
-    cursor.execute('CREATE TABLE IF NOT EXISTS Authors '
-                   '(authorId INTEGER PRIMARY KEY, '
-                   'firstname TEXT, '
-                   'lastname TEXT);')
-
-    # use ORM to insert each author instance
-
-    newAuthor1 = AuthorClass(1, "Leigh", "Bardugo")
-    newAuthor1.save_to_db()
-
-    newAuthor2 = AuthorClass(2, "Neil", "Gaiman")
-    newAuthor2.save_to_db()
-
-    newAuthor3 = AuthorClass(3, "William", "Shakespeare")
-    newAuthor3.save_to_db()
-
-    newAuthor4 = AuthorClass(4, "Agatha", "Christie")
-    newAuthor4.save_to_db()
-
-    newAuthor5 = AuthorClass(5, "Madeline", "Miller")
-    newAuthor5.save_to_db()
-
-    newAuthor6 = AuthorClass(6, "Robert", "Frost")
-    newAuthor6.save_to_db()
-
-    newAuthor7 = AuthorClass(7, "Stephen", "King")
-    newAuthor7.save_to_db()
-
-    newAuthor8 = AuthorClass(8, "Michelle", "Obama")
-    newAuthor8.save_to_db()
-
-    newAuthor9 = AuthorClass(9, "Kevin", "Kwan")
-    newAuthor9.save_to_db()
-
-    newAuthor10 = AuthorClass(10, "Robin", "Kimmerer")
-    newAuthor10.save_to_db()
-
-    # Create Books(bookId, name, authorId, genre, length_in_pages)
-    cursor.execute('CREATE TABLE IF NOT EXISTS Books '
-                   '(bookId INTEGER PRIMARY KEY, '
-                   'name TEXT, '
-                   'authorId INTEGER, '
-                   'genre TEXT, '
-                   'ave_rating FLOAT,'
-                   'FOREIGN KEY(authorId) REFERENCES Authors(authorId));')
-
-    # use ORM to insert each author instance
-
-    newBook1 = BookClass(1, "Six of Crows", 1, "Fantasy")
-    newBook1.save_to_db()
-
-    newBook1 = BookClass(2, "Coraline", 2, "Fantasy")
-    newBook1.save_to_db()
-
-    newBook1 = BookClass(3, "Romeo and Juliet", 3, "Play")
-    newBook1.save_to_db()
-
-    newBook1 = BookClass(4, "Murder on the Orient Express", 4, "Mystery")
-    newBook1.save_to_db()
-
-    newBook1 = BookClass(5, "The Song of Achilles", 5, "Historical Fiction")
-    newBook1.save_to_db()
-
-    newBook1 = BookClass(6, "The Road Not Taken", 6, "Poetry")
-    newBook1.save_to_db()
-
-    newBook1 = BookClass(7, "It", 7, "Horror")
-    newBook1.save_to_db()
-
-    newBook1 = BookClass(8, "Becoming", 8, "Autobiography")
-    newBook1.save_to_db()
-
-    newBook1 = BookClass(9, "Crazy Rich Asians", 9, "Romance")
-    newBook1.save_to_db()
-
-    newBook1 = BookClass(10, "Braiding Sweetgrass", 10, "Contemporary")
-    newBook1.save_to_db()
-
-    # create users and ratings tables - both empty
-    cursor.execute('CREATE TABLE IF NOT EXISTS Users '
-                   '(userId INTEGER PRIMARY KEY, username TEXT, password TEXT);')
-    guestUser = UserClass(1, "guest", "guest")
-    guestUser.save_to_db()
-
-    cursor.execute('CREATE TABLE IF NOT EXISTS Ratings '
-                   '(ratingId INTEGER PRIMARY KEY, '
-                   'userId TEXT, '
-                   'bookId INTEGER, '
-                   'rating FLOAT, '
-                   'FOREIGN KEY(userId) REFERENCES Users(userId),'
-                   'FOREIGN KEY(bookId) REFERENCES Books(bookId));')
-
-    create_indexes()
-
-    conn.commit()
-    cursor.close()
-    conn.close()
-
-    return
-
-def create_indexes():
-    conn = sqlite3.connect('databases/test_db1.db')
-    cursor = conn.cursor()
-
-    # create index on author names
-    cursor.execute('CREATE INDEX authorsNames ON Authors (firstname, lastname)');
-
-    # create index on book ratings
-
-    conn.commit()
-    cursor.close()
-    conn.close()
-
+# Add Book Form
 @app.route('/', methods=['POST', 'GET'])
 def update_database():
     success = False
@@ -400,6 +35,14 @@ def update_database():
     bookauthorsecond = request.form['newauthorsecond_input']
     bookgenre = request.form['newgenre_input']
     bookrating = request.form['newrating_input']
+
+    if bookauthorfirst == '':
+        bookauthorfirst = "Unknown"
+    if bookauthorsecond == '':
+        bookauthorsecond = "Author"
+    if bookgenre == '':
+        bookgenre = "Unknown Genre"
+
 
 
     # Connect to the database
@@ -439,20 +82,22 @@ def update_database():
     newbook = BookClass(max_id, bookname, aId, bookgenre.capitalize())
     newbook.save_to_db()
 
-    if (bookrating is not None):
+    if (bookrating is not None and bookrating != ''):
+        print("bookrating is not None!")
+        print(bookrating)
         rId = get_new_rating_id()
 
         tempuserId = 1
         newrating = RatingClass(rId, tempuserId, max_id, bookrating)
         newrating.save_to_db()
 
-    #cursor.execute('INSERT INTO Books (bookId, name, authorId, genre)  VALUES (?, ?, ?, ?);', (max_id, bookname, aId, bookgenre.capitalize()))
     conn.commit()
     conn.close()
 
     success = True
     return render_template('main_page.html', success=success)
 
+# Generate Report Form
 @app.route('/query', methods=['POST'])
 def query_database():
     genre_input = request.form['genre_input']
@@ -519,7 +164,6 @@ def edit_book_entries():
 
     # Fetch all entries for display
     cursor.execute('SELECT Books.bookId, Books.name, Authors.firstname, Authors.lastname, Books.genre FROM Books LEFT JOIN Authors ON Books.authorId = Authors.authorId')
-    #cursor.execute('SELECT * FROM Books;')
     entries = cursor.fetchall()
 
     cursor.close()
