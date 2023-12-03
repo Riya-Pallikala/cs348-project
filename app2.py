@@ -1,6 +1,6 @@
 import datetime
 
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for
 import sqlite3
 
 app = Flask(__name__)
@@ -17,6 +17,9 @@ class AuthorClass:
         self.firstname = firstname
         self.lastname = lastname
 
+    # ORM get id given name
+    #def get_id_from_name(self, fname, last):
+
     # ORM insert
     def save_to_db(self):
         conn = sqlite3.connect('databases/test_db1.db')
@@ -30,6 +33,63 @@ class AuthorClass:
         cursor.close()
         conn.close()
 
+def get_authorid_from_name(bookauthorfirst, bookauthorsecond):
+    conn = sqlite3.connect('databases/test_db1.db')
+    cursor = conn.cursor()
+
+    aId = 0
+    cursor.execute(
+        'SELECT authorId FROM Authors a WHERE LOWER(a.firstname) = LOWER(?) AND LOWER(a.lastname) = LOWER(?)',
+        (bookauthorfirst.capitalize(), bookauthorsecond.capitalize()))
+    result = cursor.fetchone()
+
+    if (result is not None):
+        aId = result[0]
+    else:
+        aId = None
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return aId
+
+def add_new_author(bookauthorfirst, bookauthorsecond):
+    conn = sqlite3.connect('databases/test_db1.db')
+    cursor = conn.cursor()
+
+    cursor.execute('SELECT max(authorId) from Authors;')
+    result = cursor.fetchone()
+    if (result[0] is None):
+        aId = 1
+    else:
+        aId = result[0] + 1
+
+    # Add new author to Authors table
+    newauthor = AuthorClass(aId, bookauthorfirst.capitalize(), bookauthorsecond.capitalize())
+    newauthor.save_to_db()
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return aId
+def get_full_author_name(author_id):
+    conn = sqlite3.connect('databases/test_db1.db')
+    cursor = conn.cursor()
+
+    # Assuming 'authors' is the name of your authors table
+    cursor.execute('SELECT firstname, lastname FROM Authors WHERE authorId = ?', (author_id,))
+    result = cursor.fetchone()
+
+    conn.close()
+
+    # Check if data is found
+    if result:
+        fullname = f"{result[0]} {result[1]}"
+        return fullname
+    else:
+        return "Unknown Author"
 
 # Books Table
 class BookClass:
@@ -38,6 +98,44 @@ class BookClass:
         self.name = name
         self.authorId = authorId
         self.genre = genre
+
+    # ORM select matching ID
+    def get_book_with_id(bookid):
+        conn = sqlite3.connect('databases/test_db1.db')
+        cursor = conn.cursor()
+
+        # Find book
+        cursor.execute('SELECT * FROM Books WHERE bookId = ?;', (bookid,))
+
+        result = cursor.fetchone()
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        if result:
+            # Create an instance of BookClass
+            obj = BookClass(*result)
+            return obj
+        else:
+            return None
+
+    # ORM update book's author
+    def update_book_data(self, name, authorfirstname, authorlastname, genre):
+
+        self.name = name
+        self.genre = genre
+
+        conn = sqlite3.connect('databases/test_db1.db')
+        cursor = conn.cursor()
+
+        cursor.execute('UPDATE Books SET name = ?, genre = ? WHERE bookId  = ?', (self.name, self.genre, self.bookId))
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+
 
     # ORM insert
     def save_to_db(self):
@@ -52,6 +150,25 @@ class BookClass:
         cursor.close()
         conn.close()
 
+def get_new_book_id():
+    conn = sqlite3.connect('databases/test_db1.db')
+    cursor = conn.cursor()
+
+    max_id = 0
+    cursor.execute('SELECT max(bookId) from Books;')
+    result = cursor.fetchone()
+
+    if (result is None or result[0] is None):
+        # empty booklist, this will be the first
+        max_id = 1
+    else:
+        # increment largest ID by 1, will be unique ID
+        max_id = result[0] + 1
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return max_id
 
 # Reset Database to default starting data
 # @app.route('/', methods=['POST', 'GET'])
@@ -168,15 +285,7 @@ def update_database():
 
 
     # Calculate author's id
-    aId = 0
-    cursor.execute('SELECT authorId FROM Authors a WHERE LOWER(a.firstname) = LOWER(?) AND LOWER(a.lastname) = LOWER(?)',
-                   (bookauthorfirst.capitalize(), bookauthorsecond.capitalize()))
-    result = cursor.fetchone()
-
-    if (result is not None):
-        aId = result[0]
-    else:
-        aId = None
+    aId = get_authorid_from_name(bookauthorfirst.capitalize(), bookauthorsecond.capitalize())
 
     if (aId is not None):
         # Author already exists, check that they don't already have a book of this name
@@ -193,36 +302,13 @@ def update_database():
     if (aId is None):
         # New author, need to add to the Authors table
 
-        # Calculate a new author ID
-        cursor.execute('SELECT max(authorId) from Authors;')
-        result = cursor.fetchone()
-        if (result[0] is None):
-            aId = 1
-        else:
-            aId = result[0] + 1
-
-
-        # Add new author to Authors table
-        newauthor = AuthorClass(aId, bookauthorfirst.capitalize(), bookauthorsecond.capitalize())
-        newauthor.save_to_db()
-
-        #cursor.execute('INSERT INTO Authors (authorId, firstname, lastname) VALUES (?, ?, ?);', (aId, bookauthorfirst.capitalize(), bookauthorsecond.capitalize()))
-
+        # Calculate a new author ID and add to Authors database
+        aId = add_new_author(bookauthorfirst.capitalize(), bookauthorsecond.capitalize())
 
     # Author has been added to database if not previously existing. Book can now be registered
 
     # Calculate a new book ID
-    max_id = 0
-    cursor.execute('SELECT max(bookId) from Books;')
-    result = cursor.fetchone()
-
-    if (result is None or result[0] is None):
-        # empty booklist, this will be the first
-        max_id = 1
-    else:
-        # increment largest ID by 1, will be unique ID
-        max_id = result[0] + 1
-
+    max_id = get_new_book_id()
 
     # Insert -- attribute order is : id, name, genre, author, length
     newbook = BookClass(max_id, bookname, aId, bookgenre.capitalize())
@@ -250,10 +336,12 @@ def query_database():
     query_str = 'SELECT * FROM Books b'
     firstFilter = True
     if (genre_input != ''):
+        # add functionality for list of genres
         firstFilter = False
         query_str += ' WHERE LOWER(b.genre) == "' + genre_input.lower() + '"'
 
     if (author_input != ''):
+        # add functionality for list of authors
         author_names = author_input.split(' ');
         aId = 0;
         cursor.execute('SELECT authorId FROM Authors a WHERE LOWER(a.firstname) = LOWER(?) '
@@ -269,7 +357,7 @@ def query_database():
         query_str += ' b.authorId == ' + str(aId)
 
     if (rating_input != ''):
-        # stored procedure to calculate rating for each book
+        # add calculation of rating for each book
         if firstFilter:
             query_str += ' WHERE'
         else:
@@ -287,7 +375,70 @@ def query_database():
 
     return render_template('results.html', data=result)
 
+@app.route('/edit', methods=['GET', 'POST'])
+def edit_book_entries():
+    # Connect to the database
+    conn = sqlite3.connect('databases/test_db1.db')
+    cursor = conn.cursor()
+
+    if request.method == 'POST':
+        selected_entry_id = request.form.get('selected_entry_id')
+        return redirect(url_for('edit_bookdatabase', entry_id=selected_entry_id))
+
+    # Fetch all entries for display
+    cursor.execute('SELECT Books.bookId, Books.name, Authors.firstname, Authors.lastname, Books.genre FROM Books LEFT JOIN Authors ON Books.authorId = Authors.authorId')
+    #cursor.execute('SELECT * FROM Books;')
+    entries = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    #author_names = [get_full_author_name(entry[2]) for entry in entries]
+    return render_template('editBookEntries.html', entries=entries)
+@app.route('/edit/<int:entry_id>', methods=['GET', 'POST'])
+def edit_bookdatabase(entry_id):
+    # Connect to the database
+    conn = sqlite3.connect('databases/test_db1.db')
+    cursor = conn.cursor()
+
+    if request.method == 'POST':
+        # Handle form submission for edits
+        new_name = request.form['name']
+        new_author = request.form['author']
+        new_genre = request.form['genre']
+
+        author_names = new_author.split(' ')
+
+        replaceBook = BookClass.get_book_with_id(entry_id)
+        replaceBook.update_book_data(new_name, author_names[0].capitalize(), author_names[len(author_names) - 1].capitalize(), new_genre)
+
+        return redirect(url_for('edit_book_entries'))
+
+    # Fetch existing data for pre-population
+    cursor.execute('SELECT Books.bookId, Books.name, Authors.firstname, Authors.lastname, Books.genre '
+                   'FROM Books LEFT JOIN Authors ON Books.authorId = Authors.authorId WHERE Books.bookId = ?', (entry_id,))
+    entry = cursor.fetchone()
+
+    cursor.close()
+    conn.close()
+    return render_template('editBooks.html', entry=entry)
+
+@app.route('/delete/<int:entry_id>', methods=['POST'])
+def delete_book_entry(entry_id):
+    # Connect to the database
+    conn = sqlite3.connect('databases/test_db1.db')
+    cursor = conn.cursor()
+
+    selected_entry_id = request.form.get('selected_entry_id')
+
+    cursor.execute("DELETE FROM Books WHERE bookId = ?", (selected_entry_id,))
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return redirect(url_for('edit_book_entries'))
+
 if __name__ == '__main__':
-    reset_database()
+    # reset_database()
     app.run(host='127.0.0.1', debug=True)
   #  app.run()
