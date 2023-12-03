@@ -1,16 +1,20 @@
 import datetime
 
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, session
 import sqlite3
+
+from markupsafe import Markup
 
 from ORM_Classes import AuthorClass, BookClass, UserClass, RatingClass
 
 from helper_author import *
 from helper_book import *
 from helper_rating import *
+from helper_user import *
 from helper_database import *
 
 app = Flask(__name__)
+app.secret_key = '348riyakey'
 
 # Handle only html page rendering and processing in this file
 # ORM class logic abstracted to ORM_Classes.py
@@ -21,7 +25,48 @@ app = Flask(__name__)
 @app.route('/')
 def home():
     success = False
-    return render_template('main_page.html', success=success)
+    if 'user' in session:
+        user = session['user']
+        return render_template('main_page.html', title=f'Hello, {user}! Welcome to the Book Recommender!', success=success)
+    else:
+        return render_template('main_page.html', title='Hello, Welcome to the Book Recommender!', success=success)
+
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+
+    return redirect(url_for('home'))
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
+        # Validate credentials
+        currUserId = get_userid_from_username(username)
+        if currUserId is not None:
+            pwdIsCorrect = validate_password(currUserId, password)
+
+            if pwdIsCorrect:
+                session['user'] = username
+                return redirect(url_for('home'))
+            else:
+                # wrong password
+                error_message = 'Incorrect password for this username!'
+                return render_template('login.html', error_message=error_message)
+
+        else:
+            # not yet registered - redirect to sign up
+            signup_message = Markup('Username not found! Register here: <a href="{}">Sign Up!</a>'.format(url_for('signup')))
+            return render_template('login.html', signup_message=signup_message)
+            pass
+
+
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.pop('user', None)  # Remove 'user' from the session
+    return redirect(url_for('home'))
 
 
 # Add Book Form
@@ -50,7 +95,6 @@ def update_database():
     cursor = conn.cursor()
 
     # Add to database using the user's input
-
 
     # Calculate author's id
     aId = get_authorid_from_name(bookauthorfirst.capitalize(), bookauthorsecond.capitalize())

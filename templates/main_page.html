@@ -21,7 +21,10 @@
     </style>
 </head>
 <body>
-    <h1>Welcome to the Book Recommender!</h1>
+    <h1> {{ title }} </h1>
+    {% if 'user' not in session %}
+        <p>For the full experience, please <a href="{{ url_for('login') }}">login</a> or <a href="{{ url_for('signup') }}">create an account</a>.</p>
+    {% endif %}
 
     <!-- Book Lookup Submission -->
     <div class="form-container">
@@ -45,29 +48,33 @@
 
         <!-- Book Entry -->
         <div>
-            <h2>Add Your Book!</h2>
-            <form id="add_book" action="/" method="post">
-            <label for="newbook_input">Enter book name:</label>
-            <input type="text" id="newbook_input" name="newbook_input">
-                <br> <br>
-            <label for="newauthorfirst_input">Enter author's first name:</label>
-            <input type="text" id="newauthorfirst_input" name="newauthorfirst_input">
+            {% if 'user' in session %}
+                <h2>Add Your Book!</h2>
+                <form id="add_book" action="/" method="post">
+                <label for="newbook_input">Enter book name:</label>
+                <input type="text" id="newbook_input" name="newbook_input">
+                    <br> <br>
+                <label for="newauthorfirst_input">Enter author's first name:</label>
+                <input type="text" id="newauthorfirst_input" name="newauthorfirst_input">
 
-            <label for="newauthorsecond_input">Enter author's last name:</label>
-            <input type="text" id="newauthorsecond_input" name="newauthorsecond_input">
-                <br> <br>
-                <br> <br>
-            <label for="newgenre_input">Enter book's genre:</label>
-            <input type="text" id="newgenre_input" name="newgenre_input">
+                <label for="newauthorsecond_input">Enter author's last name:</label>
+                <input type="text" id="newauthorsecond_input" name="newauthorsecond_input">
+                    <br> <br>
+                    <br> <br>
+                <label for="newgenre_input">Enter book's genre:</label>
+                <input type="text" id="newgenre_input" name="newgenre_input">
 
-            <label for="newrating_input">Enter rating (optional):</label>
-            <input type="number" id="newrating_input" name="newrating_input">
+                <label for="newrating_input">Enter rating (optional):</label>
+                <input type="number" id="newrating_input" name="newrating_input">
 
 
-            <input type="submit" value="Submit">
-            </form>
-            <div id="success-message" style="display: {{ 'block' if success else 'none' }}">Successfully submitted!</div>
-            <div id="failure-message" style="display: {{ 'block' if alreadyRegistered else 'none' }}">Book already in database!</div>
+                <input type="submit" value="Submit">
+                </form>
+                <div id="success-message" style="display: {{ 'block' if success else 'none' }}">Successfully submitted!</div>
+                <div id="failure-message" style="display: {{ 'block' if alreadyRegistered else 'none' }}">Book already in database!</div>
+            {% else %}
+                <h2> Please log in to add a book.</h2>
+            {% endif %}
         </div>
     </div>
      <div class="clear"></div>
@@ -89,6 +96,11 @@
     </script>
 <br>
 <a href="{{ url_for('edit_book_entries') }}">Edit book database</a>
+    <br>
+    <br>
+{% if 'user' in session %}
+<a href="{{ url_for('logout') }}">Logout</a>
+{% endif %}
 
 </body>
 </html>

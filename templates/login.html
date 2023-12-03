@@ -7,12 +7,18 @@
     <h1>Welcome to the Book Recommender!</h1>
     <h2> Please log in... </h2>
     <!-- Your GUI elements go here -->
+        {% if signup_message %}
+        <p style="color: green;">{{ signup_message | safe }}</p>
+        {% endif %}
     <form action="/login" method="post">
-    <label for="username">Enter information:</label>
+    <label for="username">Enter username:</label>
     <input type="text" id="username" name="username">
 
-    <label for="password">Enter information:</label>
+    <label for="password">Enter password:</label>
     <input type="text" id="password" name="password">
+        {% if error_message %}
+        <p style="color: red;">{{ error_message }}</p>
+        {% endif %}
     <input type="submit" value="Submit">
     </form>
 

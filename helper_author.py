@@ -31,6 +31,8 @@ def add_new_author(bookauthorfirst, bookauthorsecond):
     conn = sqlite3.connect('databases/test_db1.db')
     cursor = conn.cursor()
 
+    aId = 0
+
     cursor.execute('SELECT max(authorId) from Authors;')
     result = cursor.fetchone()
     if (result[0] is None):
@@ -51,7 +53,6 @@ def get_full_author_name(author_id):
     conn = sqlite3.connect('databases/test_db1.db')
     cursor = conn.cursor()
 
-    # Assuming 'authors' is the name of your authors table
     cursor.execute('SELECT firstname, lastname FROM Authors WHERE authorId = ?', (author_id,))
     result = cursor.fetchone()
 
