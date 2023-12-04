@@ -33,8 +33,27 @@ def home():
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        print("trying to signup")
+        # Validate credentials
+        currUserId = get_userid_from_username(username)
+        if currUserId is not None:
+            print("taken username")
+            taken_user_message = Markup('This username is already taken! Please <a href="{}">login</a> to that account '
+                                   'or choose a different username'.format(url_for('login')))
+            return render_template('signup.html', taken_user_message=taken_user_message)
 
-    return redirect(url_for('home'))
+        else:
+            print("new username")
+            # add new User, create session, then redirect to home page
+            add_new_user(username, password)
+            session['user'] = username
+            return redirect(url_for('home'))
+
+    return render_template('signup.html')
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -58,10 +77,14 @@ def login():
             # not yet registered - redirect to sign up
             signup_message = Markup('Username not found! Register here: <a href="{}">Sign Up!</a>'.format(url_for('signup')))
             return render_template('login.html', signup_message=signup_message)
-            pass
-
 
     return render_template('login.html')
+
+@app.route('/guest_login')
+def guest_login():
+    # guest, not logged in
+    return redirect(url_for('home'))
+
 
 @app.route('/logout')
 def logout():

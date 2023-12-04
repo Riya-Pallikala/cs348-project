@@ -5,24 +5,19 @@
 </head>
 <body>
     <h1>Welcome to the Book Recommender!</h1>
-    <h2> Please log in... </h2>
+    <h2> Create an Account: </h2>
     <!-- Your GUI elements go here -->
-        {% if signup_message %}
-        <p style="color: green;">{{ signup_message | safe }}</p>
+        {% if taken_user_message %}
+        <p style="color: green;">{{ taken_user_message | safe }}</p>
         {% endif %}
-    <form action="/login" method="post">
+    <form action="/signup" method="post">
     <label for="username">Enter username:</label>
     <input type="text" id="username" name="username">
 
     <label for="password">Enter password:</label>
     <input type="text" id="password" name="password">
-        {% if error_message %}
-        <p style="color: red;">{{ error_message }}</p>
-        {% endif %}
     <input type="submit" value="Submit">
     </form>
-
-<p>Don't have an account? Create one <a href="{{ url_for('signup') }}">here</a> or continue as a <a href="{{ url_for('guest_login') }}">guest</a>!</p>
-
+<p>Already have an account? Login <a href="{{ url_for('login') }}">here</a>!</p>
 </body>
 </html>
