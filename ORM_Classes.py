@@ -56,7 +56,7 @@ class BookClass:
         else:
             return None
 
-    # ORM update book's info - CANNOT update rating this way
+    # ORM update book's info - CANNOT update ave rating this way
     def update_book_data(self, name, authorfirstname, authorlastname, genre):
 
         self.name = name
@@ -127,7 +127,45 @@ class RatingClass:
         cursor.close()
         conn.close()
 
-        print("saved new rating for book, recalc now")
+        # print("saved new rating for book, recalc now")
+        self.recalculate_ratings()
+
+    # ORM select matching ID
+    def get_ratingid_given_user_and_book(userId, bookId):
+        conn = sqlite3.connect('databases/test_db1.db')
+        cursor = conn.cursor()
+
+        # Find book
+        cursor.execute('SELECT * FROM Ratings WHERE userId =? AND bookId = ?;', (userId, bookId))
+
+        result = cursor.fetchone()
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        if result:
+            # Create an instance of BookClass
+            obj = RatingClass(*result)
+            return obj
+        else:
+            return None
+
+    # ORM update book's info - CANNOT update ave rating this way
+    def update_rating_data(self, rating):
+
+        self.rating = rating
+
+        conn = sqlite3.connect('databases/test_db1.db')
+        cursor = conn.cursor()
+
+        cursor.execute('UPDATE Ratings SET rating = ? WHERE ratingId  = ?',
+                       (self.rating, self.ratingId))
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+
         self.recalculate_ratings()
 
     def recalculate_ratings(self):

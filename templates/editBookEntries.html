@@ -15,6 +15,8 @@
                 <th>Name</th>
                 <th>Author</th>
                 <th>Genre</th>
+                <th>Average Rating</th>
+                <th>Your Rating</th>
                 <th>Edit</th>
                 <th>Delete</th>
             </tr>
@@ -25,6 +27,8 @@
                 <td>{{ entry[1] }}</td>
                 <td>{{ entry[2] ~ ' ' ~ entry[3] }}</td>
                 <td>{{ entry[4] }}</td>
+                <td>{{ entry[5] }}</td>
+                <td>{{ entry[6] }}</td>
                 <td>
                     <form method="post" action="{{ url_for('edit_book_entries') }}">
                         <input type="hidden" name="selected_entry_id" value="{{ entry[0] }}">

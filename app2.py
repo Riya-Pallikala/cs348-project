@@ -150,8 +150,8 @@ def update_database():
     newbook.save_to_db()
 
     if (bookrating is not None and bookrating != ''):
-        print("bookrating is not None!")
-        print(bookrating)
+        # print("bookrating is not None!")
+        # print(bookrating)
         rId = get_new_rating_id()
 
         tempuserId = 1
@@ -230,7 +230,12 @@ def edit_book_entries():
         return redirect(url_for('edit_bookdatabase', entry_id=selected_entry_id))
 
     # Fetch all entries for display
-    cursor.execute('SELECT Books.bookId, Books.name, Authors.firstname, Authors.lastname, Books.genre FROM Books LEFT JOIN Authors ON Books.authorId = Authors.authorId')
+    cursor.execute('SELECT Books.bookId, Books.name, Authors.firstname, Authors.lastname, Books.genre, Books.ave_rating, Ratings.rating '
+                   'FROM Books LEFT JOIN Authors '
+                   'ON Books.authorId = Authors.authorId '
+                   'LEFT JOIN Ratings '
+                   'ON Ratings.bookId = Books.bookId AND Ratings.userId = ?',
+                   (get_userid_from_username(session['user']),))
     entries = cursor.fetchall()
 
     cursor.close()
@@ -249,17 +254,40 @@ def edit_bookdatabase(entry_id):
         new_name = request.form['name']
         new_author = request.form['author']
         new_genre = request.form['genre']
+        new_rating = request.form['rating']
 
         author_names = new_author.split(' ')
 
         replaceBook = BookClass.get_book_with_id(entry_id)
+
+        if (replaceBook.ave_rating != new_rating):
+            # need to update the rating the user submitted for this book
+            uId = get_userid_from_username(session['user'])
+            replaceRating = RatingClass.get_ratingid_given_user_and_book(uId, entry_id)
+
+            if replaceRating is None:
+                # no current rating for that user, make a new one
+                replaceRating = RatingClass(get_new_rating_id(), uId, entry_id, new_rating)
+                replaceRating.save_to_db()
+            else:
+                # old rating exists, update value
+                replaceRating.update_rating_data(new_rating)
+
         replaceBook.update_book_data(new_name, author_names[0].capitalize(), author_names[len(author_names) - 1].capitalize(), new_genre)
 
         return redirect(url_for('edit_book_entries'))
 
     # Fetch existing data for pre-population
-    cursor.execute('SELECT Books.bookId, Books.name, Authors.firstname, Authors.lastname, Books.genre '
-                   'FROM Books LEFT JOIN Authors ON Books.authorId = Authors.authorId WHERE Books.bookId = ?', (entry_id,))
+    """cursor.execute('SELECT Books.bookId, Books.name, Authors.firstname, Authors.lastname, Books.genre '
+                   'FROM Books LEFT JOIN Authors ON Books.authorId = Authors.authorId WHERE Books.bookId = ?', (entry_id,))"""
+    cursor.execute(
+        'SELECT Books.bookId, Books.name, Authors.firstname, Authors.lastname, Books.genre, Ratings.rating '
+        'FROM Books LEFT JOIN Authors '
+        'ON Books.authorId = Authors.authorId '
+        'LEFT JOIN Ratings '
+        'ON Ratings.bookId = Books.bookId AND Ratings.userId = ?'
+        'WHERE Books.bookId = ?',
+        (get_userid_from_username(session['user']), entry_id))
     entry = cursor.fetchone()
 
     cursor.close()

@@ -18,6 +18,9 @@
         <label for="genre">Genre:</label>
         <input type="text" name="genre" value="{{ entry[4] }}" required>
 
+        <label for="rating">Your rating:</label>
+        <input type="number" id="rating" name="rating" min="0" max="5" step="0.1" value="{{ entry[5] }}" required>
+
         <button type="submit">Update Entry</button>
     </form>
 <br>
