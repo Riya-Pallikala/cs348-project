@@ -169,6 +169,7 @@ class RatingClass:
         self.recalculate_ratings()
 
     def recalculate_ratings(self):
+
         # recalculates the ave rating for the book whose rating is being edited, deleted, or added
         conn = sqlite3.connect('databases/test_db1.db')
         cursor = conn.cursor()
@@ -178,7 +179,7 @@ class RatingClass:
         results = cursor.fetchall()
 
         new_ave = 0;
-        if (results is not None):
+        if (results is not None and results != '' and len(results) > 0):
 
             for res in results:
                 new_ave += res[0]
@@ -193,3 +194,4 @@ class RatingClass:
         conn.commit()
         cursor.close()
         conn.close()
+        return

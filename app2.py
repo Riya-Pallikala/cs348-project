@@ -309,6 +309,14 @@ def delete_book_entry(entry_id):
     conn.close()
     return redirect(url_for('edit_book_entries'))
 
+@app.route('/deleterating/<int:entry_id>', methods=['POST'])
+def delete_book_rating(entry_id):
+
+    selected_entry_id = request.form.get('selected_entry_id')
+    delete_rating_with_user_and_book(get_userid_from_username(session['user']), selected_entry_id)
+
+    return redirect(url_for('edit_book_entries'))
+
 if __name__ == '__main__':
     # reset_database()
     #app.run(host='127.0.0.1', debug=True)

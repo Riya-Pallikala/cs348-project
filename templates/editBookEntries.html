@@ -18,7 +18,8 @@
                 <th>Average Rating</th>
                 <th>Your Rating</th>
                 <th>Edit</th>
-                <th>Delete</th>
+                <th>Delete Book</th>
+                <th>Clear Your Rating</th>
             </tr>
         </thead>
         <tbody>
@@ -44,6 +45,19 @@
                     <script>
                         function confirmDelete() {
                             return confirm('Are you sure you want to delete?');
+                        }
+                    </script>
+
+                </td>
+                <td>
+                    <form method="post" action="{{ url_for('delete_book_rating', entry_id=entry[0]) }}" style="display: inline;" onsubmit="return confirmDeleteRating()">
+                        <input type="hidden" name="selected_entry_id" value="{{ entry[0] }}">
+                        <button type="submit">Delete</button>
+                    </form>
+
+                    <script>
+                        function confirmDeleteRating() {
+                            return confirm('Are you sure you want to delete your rating?');
                         }
                     </script>
 
