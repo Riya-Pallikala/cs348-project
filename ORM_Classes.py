@@ -28,7 +28,7 @@ class AuthorClass:
 
 # Books Table ------------------------
 class BookClass:
-    def __init__(self, bookId, name, authorId, genre, ave_rating=None):
+    def __init__(self, bookId, name, authorId, genre, ave_rating='None'):
         self.bookId = bookId
         self.name = name
         self.authorId = authorId

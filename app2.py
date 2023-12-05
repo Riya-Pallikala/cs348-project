@@ -98,10 +98,10 @@ def update_database():
     success = False
     alreadyRegistered = False
 
-    bookname = request.form['newbook_input']
-    bookauthorfirst = request.form['newauthorfirst_input']
-    bookauthorsecond = request.form['newauthorsecond_input']
-    bookgenre = request.form['newgenre_input']
+    bookname = request.form['newbook_input'].strip()
+    bookauthorfirst = request.form['newauthorfirst_input'].strip()
+    bookauthorsecond = request.form['newauthorsecond_input'].strip()
+    bookgenre = request.form['newgenre_input'].strip()
     bookrating = request.form['newrating_input']
 
     if bookauthorfirst == '':
@@ -154,8 +154,8 @@ def update_database():
         # print(bookrating)
         rId = get_new_rating_id()
 
-        tempuserId = 1
-        newrating = RatingClass(rId, tempuserId, max_id, bookrating)
+        currUserId = get_userid_from_username(session['user'])
+        newrating = RatingClass(rId, currUserId, max_id, bookrating)
         newrating.save_to_db()
 
     conn.commit()
@@ -180,35 +180,63 @@ def query_database():
     query_str = 'SELECT * FROM Books b'
     firstFilter = True
     if (genre_input != ''):
-        # add functionality for list of genres
         firstFilter = False
-        query_str += ' WHERE LOWER(b.genre) == "' + genre_input.lower() + '"'
+        genre_input_list = genre_input.split(",")
+
+        firstgenre = True
+        for genre in genre_input_list:
+            # add iteration of list of genres
+            if firstgenre:
+                query_str += ' WHERE ( LOWER(b.genre) = "' + genre.strip().lower() + '"'
+                firstgenre = False
+            else:
+                query_str += ' OR LOWER(b.genre) = "' + genre.strip().lower() + '"'
+
+        query_str += ')'
 
     if (author_input != ''):
         # add functionality for list of authors
-        author_names = author_input.split(' ');
-        aId = 0;
-        cursor.execute('SELECT authorId FROM Authors a WHERE a.firstname = ? '
-                       'AND a.lastname = ?',
-                       (author_names[0].capitalize(), author_names[len(author_names) - 1].capitalize()))
-        results = cursor.fetchone()
-        aId = results[0]
 
-        if firstFilter:
-            query_str += ' WHERE'
-        else:
-            query_str += ' AND'
-        query_str += ' b.authorId == ' + str(aId)
+        author_input_list = author_input.split(",")
+
+        firstauthor = True
+        for author in author_input_list:
+            # add iteration of list of authors
+
+            # get id from name of current author
+            author_names = author.split(' ')
+            aId = 0
+            cursor.execute('SELECT authorId FROM Authors a WHERE a.firstname = ? '
+                           'AND a.lastname = ?',
+                           (author_names[0].capitalize(), author_names[len(author_names) - 1].capitalize()))
+            results = cursor.fetchone()
+            aId = results[0]
+
+            # add to query to search for current author
+            if firstauthor:
+                if firstFilter:
+                    query_str += ' WHERE ('
+                else:
+                    query_str += ' AND ('
+                query_str += ' b.authorId == ' + str(aId)
+
+                firstauthor = False
+            else:
+                query_str += ' OR b.authorId = "' + str(aId)
+
+        query_str += ')'
+
 
     if (rating_input != ''):
         # add calculation of rating for each book
         if firstFilter:
-            query_str += ' WHERE'
+            query_str += ' WHERE ('
         else:
-            query_str += ' AND'
-        query_str += ' b.rating == ' + rating_input
+            query_str += ' AND ('
+        query_str += ' b.ave_rating >= ' + rating_input + ' OR b.ave_rating IS NULL)'
 
-    query_str += ';'
+    query_str += 'ORDER BY b.ave_rating DESC;'
+    print("query is :" + query_str)
     cursor.execute(query_str)
     result = cursor.fetchall()
     conn.close()
