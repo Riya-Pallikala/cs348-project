@@ -177,7 +177,7 @@ def query_database():
 
     # Execute an SQL query using the user's input
 
-    query_str = 'SELECT * FROM Books b'
+    query_str = 'SELECT b.bookId, b.name, firstname, lastname, b.genre, b.ave_rating FROM Books b JOIN Authors ON Authors.authorId = b.authorId'
     firstFilter = True
     if (genre_input != ''):
         firstFilter = False
@@ -204,7 +204,8 @@ def query_database():
             # add iteration of list of authors
 
             # get id from name of current author
-            author_names = author.split(' ')
+            author_names = author.strip().split(' ')
+
             aId = 0
             cursor.execute('SELECT authorId FROM Authors a WHERE a.firstname = ? '
                            'AND a.lastname = ?',
@@ -222,7 +223,7 @@ def query_database():
 
                 firstauthor = False
             else:
-                query_str += ' OR b.authorId = "' + str(aId)
+                query_str += ' OR b.authorId = ' + str(aId)
 
         query_str += ')'
 
@@ -235,15 +236,15 @@ def query_database():
             query_str += ' AND ('
         query_str += ' b.ave_rating >= ' + rating_input + ' OR b.ave_rating IS NULL)'
 
-    query_str += 'ORDER BY b.ave_rating DESC;'
+    query_str += ' ORDER BY b.ave_rating DESC;'
     print("query is :" + query_str)
     cursor.execute(query_str)
     result = cursor.fetchall()
     conn.close()
 
     # Process the result and return it to the user
-    #if (len(result) == 0):
-    #    return render_template('empty_results.html')
+    if (len(result) == 0):
+        return render_template('empty_results.html')
 
     return render_template('results.html', data=result)
 
