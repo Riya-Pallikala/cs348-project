@@ -200,6 +200,8 @@ def query_database():
         author_input_list = author_input.split(",")
 
         firstauthor = True
+        authorExists = False # only set to true when we know at least one author has been added to the list
+
         for author in author_input_list:
             # add iteration of list of authors
 
@@ -207,25 +209,33 @@ def query_database():
             author_names = author.strip().split(' ')
 
             aId = 0
-            cursor.execute('SELECT authorId FROM Authors a WHERE a.firstname = ? '
+            """ cursor.execute('SELECT authorId FROM Authors a WHERE a.firstname = ? '
                            'AND a.lastname = ?',
                            (author_names[0].capitalize(), author_names[len(author_names) - 1].capitalize()))
             results = cursor.fetchone()
-            aId = results[0]
+            aId = results[0] """
+            aId = get_authorid_from_name(author_names[0].capitalize(), author_names[len(author_names) - 1].capitalize())
 
-            # add to query to search for current author
-            if firstauthor:
-                if firstFilter:
-                    query_str += ' WHERE ('
-                else:
-                    query_str += ' AND ('
-                query_str += ' b.authorId == ' + str(aId)
-
-                firstauthor = False
+            if (aId is None):
+                # the entered author does not exist in the database
+                print("invalid author names.")
+                pass
             else:
-                query_str += ' OR b.authorId = ' + str(aId)
+                authorExists = True
+                # add to query to search for current author
+                if firstauthor:
+                    if firstFilter:
+                        query_str += ' WHERE ('
+                    else:
+                        query_str += ' AND ('
+                    query_str += ' b.authorId == ' + str(aId)
 
-        query_str += ')'
+                    firstauthor = False
+                else:
+                    query_str += ' OR b.authorId = ' + str(aId)
+
+        if authorExists:
+            query_str += ')'
 
 
     if (rating_input != ''):
