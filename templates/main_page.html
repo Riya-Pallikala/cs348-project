@@ -21,6 +21,31 @@
     </style>
 </head>
 <body>
+    <script type="text/javascript">
+        // console.log("Script loaded!");
+        // function to toggle mode of match mode button
+        function toggleMatchOption() {
+            var matchOptionInput = document.getElementById('match_option_input');
+            var visualIndicator = document.getElementById('toggle-visual-indicator');
+            var visualText = document.getElementById('visual-text');
+            var toggleButton = document.getElementById('toggle-button');
+            console.log("click. current value: "+ matchOptionInput.value);
+
+            if (matchOptionInput.value == 'any') {
+                // is any, switch to all
+                matchOptionInput.value = 'all';
+                visualIndicator.className = 'match-all-icon';
+                visualText.textContent = 'Match ALL field';
+            } else {
+                // is all, switch to any
+                matchOptionInput.value = 'any';
+                visualIndicator.className = 'match-any-icon';
+                visualText.textContent = 'Match ANY field';
+            }
+        }
+
+    </script>
+
     <h1> {{ title }} </h1>
     {% if 'user' not in session %}
         <p>For the full experience, please <a href="{{ url_for('login') }}">login</a> or <a href="{{ url_for('signup') }}">create an account</a>.</p>
@@ -40,6 +65,15 @@
                 <br> <br>
             <label for="rating_input">Enter rating:</label>
             <input type="number" id="rating_input" name="rating_input" min="0" max="5" step="0.5">
+                <br><br>
+
+            <!-- Toggle button for "match ALL" and "match ANY" functionality -->
+            <button type="button" onclick="toggleMatchOption()" id="toggle_button">
+                <span id="toggle-visual-indicator" class="match-any-icon"></span>
+                <span id="visual-text"> Match ANY field </span>
+            </button>
+            <input type="hidden" name="match_option_input" id="match_option_input" value="any">
+
                 <br><br>
             <input type="submit" value="Submit">
             </form>
@@ -66,7 +100,6 @@
                 <label for="newrating_input">Enter rating (optional):</label>
                 <input type="number" id="newrating_input" name="newrating_input" min="0" max="5" step="0.5">
 
-
                 <input type="submit" value="Submit">
                 </form>
                 <div id="success-message" style="display: {{ 'block' if success else 'none' }}">Successfully submitted!</div>
@@ -81,18 +114,19 @@
     <script>
         // JavaScript to display the success message if success is true
         document.addEventListener("DOMContentLoaded", function() {
-            const success = {{ success }}; // Convert Python boolean to JavaScript boolean
+            const isSuccess = {{ success }}; // Convert Python boolean to JavaScript boolean
             const alreadyRegistered = {{ alreadyRegistered }};
 
             const successMessage = document.getElementById("success-message");
             const failureMessage = document.getElementById("failure-message");
-            if (success) {
+            if (isSuccess) {
                 successMessage.style.display = "block";
             } else if (alreadyRegistered) {
                 failureMessage.style.display = "block";
             }
         });
     </script>
+
     {% if 'user' in session %}
     <br>
     <a href="{{ url_for('edit_book_entries') }}">View, rate, and edit all books here!</a>

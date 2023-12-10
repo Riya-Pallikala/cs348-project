@@ -170,6 +170,15 @@ def query_database():
     genre_input = request.form['genre_input']
     author_input = request.form['author_input']
     rating_input = request.form['rating_input']
+    match_mode = request.form['match_option_input']
+
+    operator = ""
+    if match_mode == 'all':
+        operator = "AND"
+    else:
+        operator = "OR"
+
+    match_string = " " + operator + " ("
 
     # Connect to the database
     conn = sqlite3.connect('databases/test_db1.db')
@@ -220,7 +229,7 @@ def query_database():
 
             if (aId is None):
                 # the entered author does not exist in the database
-                print("invalid author names.")
+                # print("invalid author names.")
                 unfound_list.append((author_names[0].capitalize(),author_names[len(author_names) - 1].capitalize()))
                 pass
             else:
@@ -230,7 +239,7 @@ def query_database():
                     if firstFilter:
                         query_str += ' WHERE ('
                     else:
-                        query_str += ' AND ('
+                        query_str += match_string
                     query_str += ' b.authorId == ' + str(aId)
 
                     firstauthor = False
@@ -246,10 +255,10 @@ def query_database():
         if firstFilter:
             query_str += ' WHERE ('
         else:
-            query_str += ' AND ('
+            query_str += match_string
         query_str += ' b.ave_rating >= ' + rating_input + ' OR b.ave_rating IS NULL)'
 
-    query_str += ' ORDER BY b.ave_rating DESC;'
+    query_str += ' ORDER BY b.ave_rating DESC, lastname, firstname, genre;'
     print("query is :" + query_str)
     cursor.execute(query_str)
     result = cursor.fetchall()
