@@ -8,9 +8,6 @@ def get_authorid_from_name(bookauthorfirst, bookauthorsecond):
     cursor = conn.cursor()
 
     aId = 0
-    """ cursor.execute(
-        'SELECT authorId FROM Authors a WHERE LOWER(a.firstname) = LOWER(?) AND LOWER(a.lastname) = LOWER(?)',
-        (bookauthorfirst.capitalize(), bookauthorsecond.capitalize())) """
     cursor.execute(
         'SELECT authorId FROM Authors a WHERE a.firstname = ? AND a.lastname = ?',
         (bookauthorfirst.capitalize(), bookauthorsecond.capitalize()))

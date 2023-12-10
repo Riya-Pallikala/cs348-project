@@ -145,7 +145,7 @@ def update_database():
     # Calculate a new book ID
     max_id = get_new_book_id()
 
-    # Insert -- attribute order is : id, name, author, genre, rating
+    # Insert -- attribute order is : id, name, author, genre, rating (optional, default None)
     newbook = BookClass(max_id, bookname, aId, bookgenre.capitalize())
     newbook.save_to_db()
 
@@ -220,17 +220,12 @@ def query_database():
             author_names = author.strip().split(' ')
 
             aId = 0
-            """ cursor.execute('SELECT authorId FROM Authors a WHERE a.firstname = ? '
-                           'AND a.lastname = ?',
-                           (author_names[0].capitalize(), author_names[len(author_names) - 1].capitalize()))
-            results = cursor.fetchone()
-            aId = results[0] """
             aId = get_authorid_from_name(author_names[0].capitalize(), author_names[len(author_names) - 1].capitalize())
 
             if (aId is None):
                 # the entered author does not exist in the database
                 # print("invalid author names.")
-                unfound_list.append((author_names[0].capitalize(),author_names[len(author_names) - 1].capitalize()))
+                unfound_list.append((author_names[0].capitalize(), author_names[len(author_names) - 1].capitalize()))
                 pass
             else:
                 authorExists = True
@@ -348,16 +343,11 @@ def edit_bookdatabase(entry_id):
 @app.route('/delete/<int:entry_id>', methods=['POST'])
 def delete_book_entry(entry_id):
     # Connect to the database
-    conn = sqlite3.connect('databases/test_db1.db')
-    cursor = conn.cursor()
 
     selected_entry_id = request.form.get('selected_entry_id')
 
-    cursor.execute("DELETE FROM Books WHERE bookId = ?", (selected_entry_id,))
+    delete_book_with_id(selected_entry_id)
 
-    conn.commit()
-    cursor.close()
-    conn.close()
     return redirect(url_for('edit_book_entries'))
 
 @app.route('/deleterating/<int:entry_id>', methods=['POST'])

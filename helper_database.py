@@ -131,7 +131,11 @@ def create_indexes():
     # create index on author names
     cursor.execute('CREATE INDEX authorsNames ON Authors (firstname, lastname)');
 
-    # create index on book ratings
+    # create index on book ratings?
+
+    # not as useful, as this returns a range as well as all unrated books,
+    # so is only going to be very useful when all books have been rated, many are low rated,
+    # and chosen minimum rating is high
 
     conn.commit()
     cursor.close()

@@ -45,6 +45,20 @@ def delete_rating_with_user_and_book(userId, bookId):
     recalculate_ratings_with_id(bookId)
     return
 
+def delete_rating_with_book_only(bookId):
+    # Connect to the database
+    conn = sqlite3.connect('databases/test_db1.db')
+    cursor = conn.cursor()
+
+    # delete all rows from table with book
+    cursor.execute("DELETE FROM Ratings WHERE bookId = ?", (bookId,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    # unlike delete_rating_with_user_and_book(), book no longer exists so no need to recalc ratings
+    return
+
 def recalculate_ratings_with_id(bookId):
 
     # recalculates the ave rating for the book whose id is passed in
