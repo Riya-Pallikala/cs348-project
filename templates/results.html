@@ -5,6 +5,13 @@
 </head>
 <body>
     <h1>Query Results:</h1>
+        {% if unfound_authors %}
+        <p>These authors do not currently have books in our database:
+            {% for item in unfound_authors %}
+            {{ item[0] }} {{ item[1] }}{% if not loop.last %}, {% endif %}
+        {% endfor %}
+        </p>
+        {% endif %}
     <table>
         <thead>
             <tr>

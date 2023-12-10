@@ -175,6 +175,8 @@ def query_database():
     conn = sqlite3.connect('databases/test_db1.db')
     cursor = conn.cursor()
 
+    unfound_list = []
+
     # Execute an SQL query using the user's input
 
     query_str = 'SELECT b.bookId, b.name, firstname, lastname, b.genre, b.ave_rating FROM Books b JOIN Authors ON Authors.authorId = b.authorId'
@@ -219,6 +221,7 @@ def query_database():
             if (aId is None):
                 # the entered author does not exist in the database
                 print("invalid author names.")
+                unfound_list.append((author_names[0].capitalize(),author_names[len(author_names) - 1].capitalize()))
                 pass
             else:
                 authorExists = True
@@ -256,7 +259,7 @@ def query_database():
     if (len(result) == 0):
         return render_template('empty_results.html')
 
-    return render_template('results.html', data=result)
+    return render_template('results.html', data=result, unfound_authors=unfound_list)
 
 @app.route('/edit', methods=['GET', 'POST'])
 def edit_book_entries():
