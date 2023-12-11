@@ -2,6 +2,7 @@ import datetime
 
 from flask import Flask, render_template, request, redirect, url_for, session
 import sqlite3
+from flask_session import Session
 
 from markupsafe import Markup
 
@@ -14,7 +15,12 @@ from helper_user import *
 from helper_database import *
 
 app = Flask(__name__)
-app.secret_key = '348riyakey'
+#app.secret_key = '348riyakey'
+app.config['SECRET_KEY'] = '348riyakey18'
+app.config["SESSION_PERMANENT"] = True
+app.config["SESSION_USE_SIGNER"] = True
+
+Session(app)
 
 # Handle only html page rendering and processing in this file
 # ORM class logic abstracted to ORM_Classes.py

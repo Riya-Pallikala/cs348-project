@@ -14,7 +14,10 @@ class AuthorClass:
 
     # ORM insert
     def save_to_db(self):
-        conn = sqlite3.connect('databases/test_db1.db')
+        # immediate locks, no preprocessing so should not cause delays,
+        # and want Authors table to be consistent due to foreign key dependency in Books
+
+        conn = sqlite3.connect('databases/test_db1.db', isolation_level="IMMEDIATE")
         cursor = conn.cursor()
 
         # Insert row with passed values
@@ -37,7 +40,12 @@ class BookClass:
 
     # ORM select matching ID
     def get_book_with_id(bookid):
-        conn = sqlite3.connect('databases/test_db1.db')
+        # immediate locks, no preprocessing so should not cause delays,
+        # only doing a read, so locking will not block other reads
+        # but still want to get a read lock, to make sure we don't say a book doesn't exist when it does or vice versa
+        # ie. don't want to allow deletion to concurrently execute
+
+        conn = sqlite3.connect('databases/test_db1.db', isolation_level='IMMEDIATE')
         cursor = conn.cursor()
 
         # Find book
@@ -60,7 +68,10 @@ class BookClass:
     def update_book_data(self, genre):
         self.genre = genre
 
-        conn = sqlite3.connect('databases/test_db1.db')
+        # immediate locks, no preprocessing so should not cause delays,
+        # would prefer to update genre before allowing reads to ensure updated data
+
+        conn = sqlite3.connect('databases/test_db1.db', isolation_level='IMMEDIATE')
         cursor = conn.cursor()
 
         cursor.execute('UPDATE Books SET genre = ? WHERE bookId  = ?', (self.genre, self.bookId))
@@ -73,7 +84,10 @@ class BookClass:
 
     # ORM insert
     def save_to_db(self):
-        conn = sqlite3.connect('databases/test_db1.db')
+        # immediate locks, no preprocessing so should not cause delays,
+        # and want Books table to be consistent due to foreign key dependency in Ratings
+
+        conn = sqlite3.connect('databases/test_db1.db', isolation_level='IMMEDIATE')
         cursor = conn.cursor()
 
         # Insert passed data
@@ -93,7 +107,11 @@ class UserClass:
         self.password = password
 
     def save_to_db(self):
-        conn = sqlite3.connect('databases/test_db1.db')
+        # immediate locks, no preprocessing so should not cause delays,
+        # and want Users table to be consistent due to foreign key dependency in Ratings,
+        # and enforce unique usernames across all users (two users shouldn't create at the exact same time)
+
+        conn = sqlite3.connect('databases/test_db1.db', isolation_level='IMMEDIATE')
         cursor = conn.cursor()
 
         # Insert passed data
@@ -114,7 +132,10 @@ class RatingClass:
         self.rating = rating
 
     def save_to_db(self):
-        conn = sqlite3.connect('databases/test_db1.db')
+        # deferred locks, but not much difference here due to only one insert
+        # Ratings is not referenced by anything, and it is ok for ratings data to be slightly outdated
+
+        conn = sqlite3.connect('databases/test_db1.db', isolation_level='DEFERRED')
         cursor = conn.cursor()
 
         # Insert passed data
@@ -130,7 +151,8 @@ class RatingClass:
 
     # ORM select matching ID
     def get_ratingid_given_user_and_book(userId, bookId):
-        conn = sqlite3.connect('databases/test_db1.db')
+        # read, so can defer; wait to get read lock in case other changes are being made still
+        conn = sqlite3.connect('databases/test_db1.db', isolation_level='DEFERRED')
         cursor = conn.cursor()
 
         # Find book
@@ -154,7 +176,13 @@ class RatingClass:
 
         self.rating = rating
 
-        conn = sqlite3.connect('databases/test_db1.db')
+        # write, but can defer;
+        # wait to get lock in case other changes are being made still;
+        # ie. maybe another user is updating their own rating, so recalculate should be performed after anyways
+        # and if user is updating from two different tabs, then the latter one should be applied, so no need
+        # to block the earlier if it occurs after this transaction starts
+
+        conn = sqlite3.connect('databases/test_db1.db', )
         cursor = conn.cursor()
 
         cursor.execute('UPDATE Ratings SET rating = ? WHERE ratingId  = ?',
@@ -169,7 +197,10 @@ class RatingClass:
     def recalculate_ratings(self):
 
         # recalculates the ave rating for the book whose rating is being edited, deleted, or added
-        conn = sqlite3.connect('databases/test_db1.db')
+
+        # immediately lock , as we are reading and then writing data based on the read, want to be consistent
+
+        conn = sqlite3.connect('databases/test_db1.db', isolation_level='IMMEDIATE')
         cursor = conn.cursor()
 
         # get all ratings for that book
