@@ -297,13 +297,14 @@ def edit_bookdatabase(entry_id):
 
     if request.method == 'POST':
         # Handle form submission for edits
-        new_name = request.form['name']
-        new_author = request.form['author']
+        # new_name = request.form['name']
+        # new_author = request.form['author']
         new_genre = request.form['genre']
         new_rating = request.form['rating']
 
-        author_names = new_author.split(' ')
+        # author_names = new_author.split(' ')
 
+        # find book entry in Books table
         replaceBook = BookClass.get_book_with_id(entry_id)
 
         if (replaceBook.ave_rating != new_rating):
@@ -319,7 +320,9 @@ def edit_bookdatabase(entry_id):
                 # old rating exists, update value
                 replaceRating.update_rating_data(new_rating)
 
-        replaceBook.update_book_data(new_name, author_names[0].capitalize(), author_names[len(author_names) - 1].capitalize(), new_genre)
+        #replaceBook.update_book_data(new_name, author_names[0].capitalize(), author_names[len(author_names) - 1].capitalize(), new_genre)
+        # updated to only allow editing of genre and rating
+        replaceBook.update_book_data(new_genre)
 
         return redirect(url_for('edit_book_entries'))
 

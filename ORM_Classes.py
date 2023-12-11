@@ -56,16 +56,14 @@ class BookClass:
         else:
             return None
 
-    # ORM update book's info - CANNOT update ave rating this way
-    def update_book_data(self, name, authorfirstname, authorlastname, genre):
-
-        self.name = name
+    # ORM update book's info - CANNOT update ave rating directly this way, must use Rating Class defs
+    def update_book_data(self, genre):
         self.genre = genre
 
         conn = sqlite3.connect('databases/test_db1.db')
         cursor = conn.cursor()
 
-        cursor.execute('UPDATE Books SET name = ?, genre = ? WHERE bookId  = ?', (self.name, self.genre, self.bookId))
+        cursor.execute('UPDATE Books SET genre = ? WHERE bookId  = ?', (self.genre, self.bookId))
 
         conn.commit()
         cursor.close()
