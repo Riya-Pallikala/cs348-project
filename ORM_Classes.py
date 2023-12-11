@@ -182,7 +182,7 @@ class RatingClass:
         # and if user is updating from two different tabs, then the latter one should be applied, so no need
         # to block the earlier if it occurs after this transaction starts
 
-        conn = sqlite3.connect('databases/test_db1.db', )
+        conn = sqlite3.connect('databases/test_db1.db', isolation_level='DEFERRED')
         cursor = conn.cursor()
 
         cursor.execute('UPDATE Ratings SET rating = ? WHERE ratingId  = ?',
@@ -198,29 +198,38 @@ class RatingClass:
 
         # recalculates the ave rating for the book whose rating is being edited, deleted, or added
 
-        # immediately lock , as we are reading and then writing data based on the read, want to be consistent
+        # immediately lock, as we are reading and then writing data based on the read, want to be consistent
+        # multiple SQL statements, so add rollback on failure
 
-        conn = sqlite3.connect('databases/test_db1.db', isolation_level='IMMEDIATE')
-        cursor = conn.cursor()
+        try:
+            with sqlite3.connect('databases/test_db1.db', isolation_level='IMMEDIATE') as conn:
+                cursor = conn.cursor()
+                cursor.execute('BEGIN')
 
-        # get all ratings for that book
-        cursor.execute('SELECT rating FROM Ratings bookId WHERE bookId = ?;', (self.bookId,))
-        results = cursor.fetchall()
+                # get all ratings for that book
+                cursor.execute('SELECT rating FROM Ratings bookId WHERE bookId = ?;', (self.bookId,))
+                results = cursor.fetchall()
 
-        new_ave = 0;
-        if (results is not None and results != '' and len(results) > 0):
+                new_ave = 0;
+                if (results is not None and results != '' and len(results) > 0):
 
-            for res in results:
-                new_ave += res[0]
-            new_ave /= len(results)
-        else:
-            # book is now unrated
-            new_ave = None
+                    for res in results:
+                        new_ave += res[0]
+                    new_ave /= len(results)
+                else:
+                    # book is now unrated
+                    new_ave = None
 
-        # update book with new average rating
-        cursor.execute('UPDATE Books SET ave_rating = ? WHERE bookId  = ?', (new_ave, self.bookId))
+                # update book with new average rating
+                cursor.execute('UPDATE Books SET ave_rating = ? WHERE bookId  = ?', (new_ave, self.bookId))
 
-        conn.commit()
-        cursor.close()
-        conn.close()
+                conn.commit()
+                cursor.close()
+                conn.close()
+                return
+        except Exception as e:
+            # Rollback the transaction
+            conn.rollback()
+            print(f"An error occurred: {str(e)}")
+
         return

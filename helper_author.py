@@ -25,27 +25,38 @@ def get_authorid_from_name(bookauthorfirst, bookauthorsecond):
     return aId
 
 def add_new_author(bookauthorfirst, bookauthorsecond):
-    conn = sqlite3.connect('databases/test_db1.db')
-    cursor = conn.cursor()
+    try:
+        with sqlite3.connect('databases/test_db1.db', isolation_level='IMMEDIATE') as conn:
+            cursor = conn.cursor()
+            cursor.execute('BEGIN')
 
-    aId = 0
+            aId = 0
 
-    cursor.execute('SELECT max(authorId) from Authors;')
-    result = cursor.fetchone()
-    if (result[0] is None):
-        aId = 1
-    else:
-        aId = result[0] + 1
+            cursor.execute('SELECT max(authorId) from Authors;')
+            result = cursor.fetchone()
+            if (result[0] is None):
+                aId = 1
+            else:
+                aId = result[0] + 1
 
-    # Add new author to Authors table
-    newauthor = AuthorClass(aId, bookauthorfirst.capitalize(), bookauthorsecond.capitalize())
-    newauthor.save_to_db()
+            # Add new author to Authors table
+            newauthor = AuthorClass(aId, bookauthorfirst.capitalize(), bookauthorsecond.capitalize())
+            newauthor.save_to_db()
 
-    conn.commit()
-    cursor.close()
-    conn.close()
+            conn.commit()
+            cursor.close()
+            conn.close()
 
-    return aId
+            return aId
+
+    except Exception as e:
+        # Rollback the transaction in case of an exception
+        conn.rollback()
+
+        # Log the exception or handle it as needed
+        print(f"An error occurred: {str(e)}")
+        return None
+
 def get_full_author_name(author_id):
     conn = sqlite3.connect('databases/test_db1.db')
     cursor = conn.cursor()
