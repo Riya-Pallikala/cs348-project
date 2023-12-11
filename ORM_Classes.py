@@ -13,11 +13,11 @@ class AuthorClass:
     #def get_id_from_name(self, fname, last):
 
     # ORM insert
-    def save_to_db(self):
+    def save_to_db(self, conn):
         # immediate locks, no preprocessing so should not cause delays,
         # and want Authors table to be consistent due to foreign key dependency in Books
 
-        conn = sqlite3.connect('databases/test_db1.db', isolation_level="IMMEDIATE")
+        #conn = sqlite3.connect('databases/test_db1.db', isolation_level="IMMEDIATE")
         cursor = conn.cursor()
 
         # Insert row with passed values
@@ -26,7 +26,7 @@ class AuthorClass:
 
         conn.commit()
         cursor.close()
-        conn.close()
+        #conn.close()
 
 
 # Books Table ------------------------
@@ -65,29 +65,29 @@ class BookClass:
             return None
 
     # ORM update book's info - CANNOT update ave rating directly this way, must use Rating Class defs
-    def update_book_data(self, genre):
+    def update_book_data(self, genre, conn):
         self.genre = genre
 
         # immediate locks, no preprocessing so should not cause delays,
         # would prefer to update genre before allowing reads to ensure updated data
 
-        conn = sqlite3.connect('databases/test_db1.db', isolation_level='IMMEDIATE')
+        #conn = sqlite3.connect('databases/test_db1.db', isolation_level='IMMEDIATE')
         cursor = conn.cursor()
 
         cursor.execute('UPDATE Books SET genre = ? WHERE bookId  = ?', (self.genre, self.bookId))
 
         conn.commit()
         cursor.close()
-        conn.close()
+        #conn.close()
 
 
 
     # ORM insert
-    def save_to_db(self):
+    def save_to_db(self, conn):
         # immediate locks, no preprocessing so should not cause delays,
         # and want Books table to be consistent due to foreign key dependency in Ratings
 
-        conn = sqlite3.connect('databases/test_db1.db', isolation_level='IMMEDIATE')
+        #conn = sqlite3.connect('databases/test_db1.db', isolation_level='IMMEDIATE')
         cursor = conn.cursor()
 
         # Insert passed data
@@ -96,7 +96,7 @@ class BookClass:
 
         conn.commit()
         cursor.close()
-        conn.close()
+        #conn.close()
 
 
 # Users Table ------------------------
@@ -106,12 +106,12 @@ class UserClass:
         self.username = username
         self.password = password
 
-    def save_to_db(self):
+    def save_to_db(self, conn):
         # immediate locks, no preprocessing so should not cause delays,
         # and want Users table to be consistent due to foreign key dependency in Ratings,
         # and enforce unique usernames across all users (two users shouldn't create at the exact same time)
 
-        conn = sqlite3.connect('databases/test_db1.db', isolation_level='IMMEDIATE')
+        #conn = sqlite3.connect('databases/test_db1.db', isolation_level='IMMEDIATE')
         cursor = conn.cursor()
 
         # Insert passed data
@@ -120,7 +120,7 @@ class UserClass:
 
         conn.commit()
         cursor.close()
-        conn.close()
+        #conn.close()
 
 
 # Ratings Table ------------------------
@@ -131,11 +131,11 @@ class RatingClass:
         self.bookId = bookId
         self.rating = rating
 
-    def save_to_db(self):
+    def save_to_db(self, conn):
         # deferred locks, but not much difference here due to only one insert
         # Ratings is not referenced by anything, and it is ok for ratings data to be slightly outdated
 
-        conn = sqlite3.connect('databases/test_db1.db', isolation_level='DEFERRED')
+        #conn = sqlite3.connect('databases/test_db1.db', isolation_level='DEFERRED')
         cursor = conn.cursor()
 
         # Insert passed data
@@ -144,10 +144,11 @@ class RatingClass:
 
         conn.commit()
         cursor.close()
-        conn.close()
+        #conn.close()
 
         # print("saved new rating for book, recalc now")
-        self.recalculate_ratings()
+        self.recalculate_ratings(conn)
+        #conn.close()
 
     # ORM select matching ID
     def get_ratingid_given_user_and_book(userId, bookId):
@@ -172,7 +173,7 @@ class RatingClass:
             return None
 
     # ORM update book's info - CANNOT update ave rating this way
-    def update_rating_data(self, rating):
+    def update_rating_data(self, rating, conn):
 
         self.rating = rating
 
@@ -190,11 +191,13 @@ class RatingClass:
 
         conn.commit()
         cursor.close()
-        conn.close()
+        #conn.close()
 
-        self.recalculate_ratings()
+        self.recalculate_ratings(conn)
+        conn.commit()
+        #conn.close()
 
-    def recalculate_ratings(self):
+    def recalculate_ratings(self, conn):
 
         # recalculates the ave rating for the book whose rating is being edited, deleted, or added
 
@@ -202,31 +205,31 @@ class RatingClass:
         # multiple SQL statements, so add rollback on failure
 
         try:
-            with sqlite3.connect('databases/test_db1.db', isolation_level='IMMEDIATE') as conn:
-                cursor = conn.cursor()
-                cursor.execute('BEGIN')
+            #with sqlite3.connect('databases/test_db1.db', isolation_level='IMMEDIATE') as conn:
+            cursor = conn.cursor()
+            #cursor.execute('BEGIN')
 
-                # get all ratings for that book
-                cursor.execute('SELECT rating FROM Ratings bookId WHERE bookId = ?;', (self.bookId,))
-                results = cursor.fetchall()
+            # get all ratings for that book
+            cursor.execute('SELECT rating FROM Ratings bookId WHERE bookId = ?;', (self.bookId,))
+            results = cursor.fetchall()
 
-                new_ave = 0;
-                if (results is not None and results != '' and len(results) > 0):
+            new_ave = 0;
+            if (results is not None and results != '' and len(results) > 0):
 
-                    for res in results:
-                        new_ave += res[0]
-                    new_ave /= len(results)
-                else:
-                    # book is now unrated
-                    new_ave = None
+                for res in results:
+                    new_ave += res[0]
+                new_ave /= len(results)
+            else:
+                # book is now unrated
+                new_ave = None
 
-                # update book with new average rating
-                cursor.execute('UPDATE Books SET ave_rating = ? WHERE bookId  = ?', (new_ave, self.bookId))
+            # update book with new average rating
+            cursor.execute('UPDATE Books SET ave_rating = ? WHERE bookId  = ?', (new_ave, self.bookId))
 
-                conn.commit()
-                cursor.close()
-                conn.close()
-                return
+            conn.commit()
+            cursor.close()
+            #conn.close()
+            return
         except Exception as e:
             # Rollback the transaction
             conn.rollback()

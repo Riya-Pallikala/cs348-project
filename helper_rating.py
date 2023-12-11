@@ -23,9 +23,9 @@ def get_new_rating_id():
     conn.close()
     return max_id
 
-def delete_rating_with_user_and_book(userId, bookId):
+def delete_rating_with_user_and_book(userId, bookId, conn):
     # Connect to the database
-    conn = sqlite3.connect('databases/test_db1.db')
+    #conn = sqlite3.connect('databases/test_db1.db')
     cursor = conn.cursor()
 
     tempRating = RatingClass.get_ratingid_given_user_and_book(userId, bookId)
@@ -34,35 +34,36 @@ def delete_rating_with_user_and_book(userId, bookId):
 
     if (tempRating is not None):
         cursor.execute("DELETE FROM Ratings WHERE bookId = ? AND userID = ?", (bookId, userId))
-        conn.commit()
-        cursor.close()
-        conn.close()
+
 
         # use temp object to recalculate
-        tempRating.recalculate_ratings()
+        tempRating.recalculate_ratings(conn)
 
     # else there is already no rating for that book from that user, just recalc for the book id
-    recalculate_ratings_with_id(bookId)
+    recalculate_ratings_with_id(bookId, conn)
+    conn.commit()
+    cursor.close()
+    #conn.close()
     return
 
-def delete_rating_with_book_only(bookId):
+def delete_rating_with_book_only(bookId, conn):
     # Connect to the database
-    conn = sqlite3.connect('databases/test_db1.db')
+    #conn = sqlite3.connect('databases/test_db1.db')
     cursor = conn.cursor()
 
     # delete all rows from table with book
     cursor.execute("DELETE FROM Ratings WHERE bookId = ?", (bookId,))
     conn.commit()
     cursor.close()
-    conn.close()
+    #conn.close()
 
     # unlike delete_rating_with_user_and_book(), book no longer exists so no need to recalc ratings
     return
 
-def recalculate_ratings_with_id(bookId):
+def recalculate_ratings_with_id(bookId, conn):
 
     # recalculates the ave rating for the book whose id is passed in
-    conn = sqlite3.connect('databases/test_db1.db')
+    # conn = sqlite3.connect('databases/test_db1.db')
     cursor = conn.cursor()
 
     # get all ratings for that book
@@ -84,5 +85,5 @@ def recalculate_ratings_with_id(bookId):
 
     conn.commit()
     cursor.close()
-    conn.close()
+    #conn.close()
     return

@@ -28,7 +28,8 @@ def delete_book_with_id(entry_id):
     cursor = conn.cursor()
 
     # delete from ratings first to avoid referencing a nonexistent book id
-    delete_rating_with_book_only(entry_id)
+    delete_rating_with_book_only(entry_id, conn)
+
     cursor.execute("DELETE FROM Books WHERE bookId = ?", (entry_id,))
 
     conn.commit()

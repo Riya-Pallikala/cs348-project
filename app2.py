@@ -161,7 +161,9 @@ def update_database():
 
     # Insert -- attribute order is : id, name, author, genre, rating (optional, default None)
     newbook = BookClass(max_id, bookname, aId, bookgenre.capitalize())
-    newbook.save_to_db()
+    newbook.save_to_db(conn)
+    conn.commit()
+
 
     if (bookrating is not None and bookrating != ''):
         # print("bookrating is not None!")
@@ -170,9 +172,9 @@ def update_database():
 
         currUserId = get_userid_from_username(session['user'])
         newrating = RatingClass(rId, currUserId, max_id, bookrating)
-        newrating.save_to_db()
+        newrating.save_to_db(conn)
 
-    conn.commit()
+    #conn.commit()
     conn.close()
 
     success = True
@@ -329,14 +331,14 @@ def edit_bookdatabase(entry_id):
             if replaceRating is None:
                 # no current rating for that user, make a new one
                 replaceRating = RatingClass(get_new_rating_id(), uId, entry_id, new_rating)
-                replaceRating.save_to_db()
+                replaceRating.save_to_db(conn)
             else:
                 # old rating exists, update value
-                replaceRating.update_rating_data(new_rating)
+                replaceRating.update_rating_data(new_rating, conn)
 
         #replaceBook.update_book_data(new_name, author_names[0].capitalize(), author_names[len(author_names) - 1].capitalize(), new_genre)
         # updated to only allow editing of genre and rating
-        replaceBook.update_book_data(new_genre)
+        replaceBook.update_book_data(new_genre, conn)
 
         return redirect(url_for('edit_book_entries'))
 
@@ -369,9 +371,15 @@ def delete_book_entry(entry_id):
 
 @app.route('/deleterating/<int:entry_id>', methods=['POST'])
 def delete_book_rating(entry_id):
+    conn = sqlite3.connect('databases/test_db1.db')
+    cursor = conn.cursor()
 
     selected_entry_id = request.form.get('selected_entry_id')
-    delete_rating_with_user_and_book(get_userid_from_username(session['user']), selected_entry_id)
+    delete_rating_with_user_and_book(get_userid_from_username(session['user']), selected_entry_id, conn)
+
+    conn.commit()
+    cursor.close()
+    conn.close()
 
     return redirect(url_for('edit_book_entries'))
 
