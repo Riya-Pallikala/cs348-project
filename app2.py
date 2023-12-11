@@ -5,6 +5,7 @@ import sqlite3
 from flask_session import Session
 
 from markupsafe import Markup
+import secrets
 
 from ORM_Classes import AuthorClass, BookClass, UserClass, RatingClass
 
@@ -16,14 +17,13 @@ from helper_database import *
 
 app = Flask(__name__)
 #app.secret_key = '348riyakey'
-app.config['SECRET_KEY'] = '348riyakey18123'
+#app.config['SECRET_KEY'] = '348riyakey18123'
+app.config['SECRET_KEY'] = secrets.token_hex(16)
 
 app.config["SESSION_PERMANENT"] = False
 # app.config["SESSION_USE_SIGNER"] = True
 
-
-
-Session(app)
+#Session(app)
 
 # Handle only html page rendering and processing in this file
 # ORM class logic abstracted to ORM_Classes.py
@@ -34,7 +34,9 @@ Session(app)
 @app.route('/')
 def home():
     success = False
+    print("SECRET_KEY:", app.config['SECRET_KEY'])
     if 'user' in session:
+        print('user logged in')
         user = session['user']
         return render_template('main_page.html', title=f'Hello, {user}! Welcome to the Book Recommender!', success=success)
     else:
@@ -75,6 +77,9 @@ def login():
             pwdIsCorrect = validate_password(currUserId, password)
 
             if pwdIsCorrect:
+                print("correct credentials")
+                print("SECRET_KEY:", app.config['SECRET_KEY'])
+
                 session['user'] = username
                 return redirect(url_for('home'))
             else:
@@ -148,19 +153,19 @@ def update_database():
 
         # Calculate a new author ID and add to Authors database
         aId = add_new_author(bookauthorfirst.capitalize(), bookauthorsecond.capitalize())
-        if aId is None:
-            count = 3
-            while count > 0:
+        #if aId is None:
+         #   count = 3
+         #   while count > 0:
                 # Author insertion transaction failed, try again
-                aId = add_new_author(bookauthorfirst.capitalize(), bookauthorsecond.capitalize())
-                count -= 1
+         #       aId = add_new_author(bookauthorfirst.capitalize(), bookauthorsecond.capitalize())
+         #       count -= 1
 
                 # keep retrying until failed three times, or transaction is successful
-                if aId is not None: break
+          #      if aId is not None: break
 
-            if aId is None:
+          #  if aId is None:
                 # aId is still none, so transaction failed three times. Cannot add book
-                pass
+          #      pass
 
     # Author has been added to database if not previously existing. Book can now be registered
 
