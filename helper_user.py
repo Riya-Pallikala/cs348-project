@@ -50,22 +50,30 @@ def get_userid_from_username(uname):
     return uId
 
 def add_new_user(username, password):
-    conn = sqlite3.connect('databases/test_db1.db')
-    cursor = conn.cursor()
+    try:
+        with sqlite3.connect('databases/test_db1.db', isolation_level='EXCLUSIVE') as conn:
+            cursor = conn.cursor()
 
-    cursor.execute('SELECT max(userId) from Users;')
-    result = cursor.fetchone()
-    if (result[0] is None):
-        uId = 1
-    else:
-        uId = result[0] + 1
+            cursor.execute('SELECT max(userId) from Users;')
+            result = cursor.fetchone()
+            if (result[0] is None):
+                uId = 1
+            else:
+                uId = result[0] + 1
 
-    # Add new author to Authors table
-    newuser = UserClass(uId, username, password)
-    newuser.save_to_db()
+            # Add new author to Authors table
+            newuser = UserClass(uId, username, password)
+            newuser.save_to_db()
 
-    conn.commit()
-    cursor.close()
-    conn.close()
+            conn.commit()
+            cursor.close()
+            conn.close()
 
-    return uId
+            return uId
+    except Exception as e:
+        # Rollback the transaction in case of an exception
+        conn.rollback()
+
+        # Log the exception or handle it as needed
+        print(f"An error occurred when adding new User: {str(e)}")
+        return None

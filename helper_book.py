@@ -3,6 +3,7 @@ import sqlite3
 from helper_rating import *
 
 def get_new_book_id():
+    # Deferred ok, no processing before and lock will be held until commit, so post processing will be atomic
     conn = sqlite3.connect('databases/test_db1.db')
     cursor = conn.cursor()
 

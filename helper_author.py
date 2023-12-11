@@ -54,7 +54,7 @@ def add_new_author(bookauthorfirst, bookauthorsecond):
         conn.rollback()
 
         # Log the exception or handle it as needed
-        print(f"An error occurred: {str(e)}")
+        print(f"An error occurred when adding new Author: {str(e)}")
         return None
 
 def get_full_author_name(author_id):

@@ -153,19 +153,7 @@ def update_database():
 
         # Calculate a new author ID and add to Authors database
         aId = add_new_author(bookauthorfirst.capitalize(), bookauthorsecond.capitalize())
-        #if aId is None:
-         #   count = 3
-         #   while count > 0:
-                # Author insertion transaction failed, try again
-         #       aId = add_new_author(bookauthorfirst.capitalize(), bookauthorsecond.capitalize())
-         #       count -= 1
 
-                # keep retrying until failed three times, or transaction is successful
-          #      if aId is not None: break
-
-          #  if aId is None:
-                # aId is still none, so transaction failed three times. Cannot add book
-          #      pass
 
     # Author has been added to database if not previously existing. Book can now be registered
 
@@ -178,7 +166,7 @@ def update_database():
 
     if (bookrating is not None and bookrating != ''):
         # print("bookrating is not None!")
-        # print(bookrating)
+        print(bookrating)
         rId = get_new_rating_id()
 
         currUserId = get_userid_from_username(session['user'])
@@ -215,7 +203,7 @@ def query_database():
 
     # Execute an SQL query using the user's input
 
-    query_str = 'SELECT b.bookId, b.name, firstname, lastname, b.genre, b.ave_rating FROM Books b JOIN Authors ON Authors.authorId = b.authorId'
+    query_str = 'SELECT b.bookId, b.name, firstname, lastname, b.genre, b.ave_rating FROM Books b LEFT JOIN Authors ON Authors.authorId = b.authorId'
     firstFilter = True
     if (genre_input != ''):
         firstFilter = False
