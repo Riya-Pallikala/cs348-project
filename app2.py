@@ -16,8 +16,7 @@ from helper_user import *
 from helper_database import *
 
 app = Flask(__name__)
-#app.secret_key = '348riyakey'
-#app.config['SECRET_KEY'] = '348riyakey18123'
+
 app.config['SECRET_KEY'] = secrets.token_hex(16)
 
 app.config["SESSION_PERMANENT"] = False
@@ -34,7 +33,7 @@ app.config["SESSION_PERMANENT"] = False
 @app.route('/')
 def home():
     success = False
-    print("SECRET_KEY:", app.config['SECRET_KEY'])
+    #print("SECRET_KEY:", app.config['SECRET_KEY'])
     if 'user' in session:
         print('user logged in')
         user = session['user']
@@ -47,17 +46,17 @@ def signup():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        print("trying to signup")
+        # print("trying to signup")
         # Validate credentials
         currUserId = get_userid_from_username(username)
         if currUserId is not None:
-            print("taken username")
+            # print("taken username")
             taken_user_message = Markup('This username is already taken! Please <a href="{}">login</a> to that account '
                                    'or choose a different username'.format(url_for('login')))
             return render_template('signup.html', taken_user_message=taken_user_message)
 
         else:
-            print("new username")
+            #print("new username")
             # add new User, create session, then redirect to home page
             add_new_user(username, password)
             session['user'] = username
@@ -77,8 +76,8 @@ def login():
             pwdIsCorrect = validate_password(currUserId, password)
 
             if pwdIsCorrect:
-                print("correct credentials")
-                print("SECRET_KEY:", app.config['SECRET_KEY'])
+                #print("correct credentials")
+                #print("SECRET_KEY:", app.config['SECRET_KEY'])
 
                 session['user'] = username
                 return redirect(url_for('home'))
@@ -166,7 +165,7 @@ def update_database():
 
     if (bookrating is not None and bookrating != ''):
         # print("bookrating is not None!")
-        print(bookrating)
+        # print(bookrating)
         rId = get_new_rating_id()
 
         currUserId = get_userid_from_username(session['user'])
